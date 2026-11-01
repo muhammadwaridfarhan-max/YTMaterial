@@ -12,11 +12,13 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -24,14 +26,20 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.animation.core.animateFloatAsState
+import dev.chrisbanes.haze.HazeState
 
 data class NavTab(@StringRes val label: Int, val icon: ImageVector)
 
@@ -44,15 +52,10 @@ fun FloatingNavBar(
     tabs: List<NavTab>,
     selected: Int,
     onSelect: (Int) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    hazeState: HazeState? = null
 ) {
-    Surface(
-        modifier = modifier,
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = 3.dp,
-        shadowElevation = 12.dp
-    ) {
+    Box(modifier = modifier.glass(hazeState, CircleShape)) {
         Row(
             modifier = Modifier.padding(6.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -68,6 +71,12 @@ fun FloatingNavBar(
 @Composable
 private fun NavPill(tab: NavTab, selected: Boolean, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
+    val interaction = remember { MutableInteractionSource() }
+    val iconScale by animateFloatAsState(
+        targetValue = if (selected) 1.15f else 1f,
+        animationSpec = PopSpring,
+        label = "pillIcon"
+    )
     val container by animateColorAsState(
         targetValue = if (selected) scheme.primaryContainer else Color.Transparent,
         animationSpec = tween(250),
@@ -84,9 +93,16 @@ private fun NavPill(tab: NavTab, selected: Boolean, onClick: () -> Unit) {
                 spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow)
             )
             .height(48.dp)
+            .pressScale(interaction, 0.9f)
             .clip(CircleShape)
             .background(container)
-            .selectable(selected = selected, onClick = onClick, role = Role.Tab)
+            .clickable(
+                interactionSource = interaction,
+                indication = null,
+                role = Role.Tab,
+                onClick = onClick
+            )
+            .semantics { this.selected = selected }
             .padding(horizontal = if (selected) 16.dp else 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
@@ -94,7 +110,11 @@ private fun NavPill(tab: NavTab, selected: Boolean, onClick: () -> Unit) {
         Icon(
             tab.icon,
             contentDescription = if (selected) null else stringResource(tab.label),
-            tint = content
+            tint = content,
+            modifier = Modifier.graphicsLayer {
+                scaleX = iconScale
+                scaleY = iconScale
+            }
         )
         AnimatedVisibility(
             visible = selected,

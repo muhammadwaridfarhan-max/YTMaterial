@@ -76,16 +76,7 @@ fun YouScreen(bottomPadding: androidx.compose.ui.unit.Dp = 0.dp) {
         )
     ) {
         item {
-            Text(
-                stringResource(R.string.nav_you),
-                style = MaterialTheme.typography.headlineSmall
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                stringResource(R.string.login_later),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            AccountCard()
             Spacer(Modifier.height(16.dp))
         }
         item {

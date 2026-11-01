@@ -5,6 +5,17 @@ package com.example.ytclient.ui
 import android.content.Intent
 import android.view.LayoutInflater
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.ui.input.pointer.pointerInput
+import kotlinx.coroutines.delay
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -211,6 +222,13 @@ private fun ShortPage(
 ) {
     val context = LocalContext.current
     var liked by rememberSaveable(item.url) { mutableStateOf(false) }
+    var heartBurst by remember { mutableStateOf(false) }
+    LaunchedEffect(heartBurst) {
+        if (heartBurst) {
+            delay(650)
+            heartBurst = false
+        }
+    }
 
     val videoVisible = isActive && shorts.currentUrl == item.url && shorts.hasFirstFrame
     val thumbAlpha by animateFloatAsState(
@@ -223,10 +241,17 @@ private fun ShortPage(
         Modifier
             .fillMaxSize()
             .background(Color.Black)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) { if (isActive) shorts.togglePlay() }
+            .pointerInput(isActive) {
+                detectTapGestures(
+                    onTap = { if (isActive) shorts.togglePlay() },
+                    onDoubleTap = {
+                        if (isActive) {
+                            liked = true
+                            heartBurst = true
+                        }
+                    }
+                )
+            }
     ) {
         if (isActive) {
             AndroidView(
@@ -289,6 +314,20 @@ private fun ShortPage(
             }
         }
 
+        AnimatedVisibility(
+            visible = heartBurst,
+            modifier = Modifier.align(Alignment.Center),
+            enter = scaleIn(PopSpring, initialScale = 0.3f) + fadeIn(),
+            exit = scaleOut(targetScale = 1.4f) + fadeOut()
+        ) {
+            Icon(
+                Icons.Filled.Favorite,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(104.dp)
+            )
+        }
+
         // Bottom gradient + info + actions
         Box(
             Modifier
@@ -337,6 +376,7 @@ private fun ShortPage(
                     icon = Icons.Filled.ThumbUp,
                     label = stringResource(R.string.like),
                     tint = if (liked) MaterialTheme.colorScheme.primary else Color.White,
+                    popKey = liked,
                     onClick = { liked = !liked }
                 )
                 ShortAction(
@@ -400,17 +440,40 @@ private fun ShortAction(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     tint: Color,
+    popKey: Boolean = false,
     onClick: () -> Unit
 ) {
+    val interaction = remember { MutableInteractionSource() }
+    val pop = remember { Animatable(1f) }
+    LaunchedEffect(popKey) {
+        if (popKey) {
+            pop.snapTo(0.5f)
+            pop.animateTo(
+                1f,
+                spring(dampingRatio = Spring.DampingRatioHighBouncy, stiffness = Spring.StiffnessMedium)
+            )
+        }
+    }
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Surface(
             onClick = onClick,
             shape = CircleShape,
             color = Color.Black.copy(alpha = 0.35f),
-            modifier = Modifier.size(48.dp)
+            interactionSource = interaction,
+            modifier = Modifier
+                .size(48.dp)
+                .pressScale(interaction, 0.85f)
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = label, tint = tint)
+                Icon(
+                    icon,
+                    contentDescription = label,
+                    tint = tint,
+                    modifier = Modifier.graphicsLayer {
+                        scaleX = pop.value
+                        scaleY = pop.value
+                    }
+                )
             }
         }
         Spacer(Modifier.height(4.dp))

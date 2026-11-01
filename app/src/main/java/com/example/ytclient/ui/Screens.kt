@@ -64,7 +64,14 @@ fun VideoList(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(state.items, key = { it.url }, contentType = { "video" }) { video ->
-                    VideoCard(video, onClick = { onPlay(video) })
+                    VideoCard(
+                        video,
+                        onClick = { onPlay(video) },
+                        modifier = Modifier.animateItem(
+                            fadeInSpec = SoftSpring,
+                            placementSpec = OffsetSpring
+                        )
+                    )
                 }
             }
         }

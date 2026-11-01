@@ -2,7 +2,14 @@ package com.example.ytclient.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -25,6 +32,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -40,6 +48,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -51,6 +60,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -62,7 +72,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.ytclient.R
+import com.example.ytclient.auth.AccountManager
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 
 @Composable
 fun App(vm: MainViewModel = viewModel()) {
@@ -88,6 +102,8 @@ fun App(vm: MainViewModel = viewModel()) {
     var searching by rememberSaveable { mutableStateOf(false) }
     var barVisible by remember { mutableStateOf(true) }
     val tabState = rememberSaveableStateHolder()
+    val hazeState = remember { HazeState() }
+    val user by AccountManager.user.collectAsState(initial = null)
 
     // Show the bar again whenever the tab changes; keep the two players from overlapping.
     LaunchedEffect(selected) { barVisible = true }
@@ -116,25 +132,44 @@ fun App(vm: MainViewModel = viewModel()) {
     )
 
     BackHandler(enabled = selected != 0 && !searching) { selected = 0 }
+    BackHandler(enabled = searching) { searching = false }
 
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
         Box(Modifier.fillMaxSize()) {
             Column(
                 Modifier
                     .fillMaxSize()
+                    .hazeSource(hazeState)
                     .nestedScroll(scrollConnection)
             ) {
                 if (selected != 1) {
-                    YTTopBar(onSearch = { searching = true }, onProfile = { selected = 3 })
+                    YTTopBar(
+                        avatarUrl = user?.photoUrl,
+                        onSearch = { searching = true },
+                        onProfile = { selected = 3 }
+                    )
                 }
                 Box(
                     Modifier
                         .weight(1f)
                         .fillMaxWidth()
                 ) {
-                    // Keeps each tab's scroll position when switching tabs.
-                    tabState.SaveableStateProvider(selected) {
-                        when (selected) {
+                    AnimatedContent(
+                        targetState = selected,
+                        modifier = Modifier.fillMaxSize(),
+                        transitionSpec = {
+                            val dir = if (targetState > initialState) 1 else -1
+                            (slideInHorizontally(OffsetSpring) { dir * it / 5 } +
+                                fadeIn(SoftSpring) +
+                                scaleIn(SoftSpring, initialScale = 0.95f)) togetherWith
+                                (slideOutHorizontally(OffsetSpring) { -dir * it / 5 } +
+                                    fadeOut(tween(120)))
+                        },
+                        label = "tabs"
+                    ) { tab ->
+                        // Keeps each tab's scroll position when switching tabs.
+                        tabState.SaveableStateProvider(tab) {
+                        when (tab) {
                             0 -> HomeScreen(
                                 vm,
                                 onPlay = controller::open,
@@ -152,12 +187,18 @@ fun App(vm: MainViewModel = viewModel()) {
                             2 -> Placeholder(Icons.Filled.Subscriptions, R.string.nav_subs)
                             else -> YouScreen(bottomPadding = contentBottom)
                         }
+                        }
                     }
                 }
             }
 
-            if (searching) {
-                BackHandler { searching = false }
+            AnimatedVisibility(
+                visible = searching,
+                enter = slideInVertically(OffsetSpring) { it / 6 } +
+                    fadeIn(SoftSpring) +
+                    scaleIn(SoftSpring, initialScale = 0.94f),
+                exit = fadeOut(tween(150)) + scaleOut(targetScale = 0.96f)
+            ) {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
                     Column(
                         Modifier
@@ -183,27 +224,41 @@ fun App(vm: MainViewModel = viewModel()) {
                     .padding(bottom = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                MiniPlayer(
-                    controller = controller,
-                    onExpand = { controller.expanded = true },
-                    modifier = Modifier
-                        .padding(horizontal = 12.dp)
-                        .padding(bottom = 8.dp)
-                )
+                AnimatedVisibility(
+                    visible = miniVisible,
+                    enter = slideInVertically(OffsetSpring) { it } +
+                        scaleIn(SoftSpring, initialScale = 0.85f) +
+                        fadeIn(SoftSpring),
+                    exit = slideOutVertically(OffsetSpring) { it } + fadeOut(tween(150))
+                ) {
+                    MiniPlayer(
+                        controller = controller,
+                        onExpand = { controller.expanded = true },
+                        hazeState = hazeState,
+                        modifier = Modifier
+                            .padding(horizontal = 12.dp)
+                            .padding(bottom = 8.dp)
+                    )
+                }
                 AnimatedVisibility(
                     visible = showBar,
-                    enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+                    enter = slideInVertically(OffsetSpring) { it } + fadeIn(SoftSpring),
+                    exit = slideOutVertically(OffsetSpring) { it } + fadeOut(tween(150))
                 ) {
                     FloatingNavBar(
                         tabs = tabs,
                         selected = selected,
-                        onSelect = { selected = it }
+                        onSelect = { selected = it },
+                        hazeState = hazeState
                     )
                 }
             }
 
-            if (controller.current != null && controller.expanded) {
+            AnimatedVisibility(
+                visible = controller.current != null && controller.expanded,
+                enter = slideInVertically(OffsetSpring) { it } + fadeIn(SoftSpring),
+                exit = slideOutVertically(OffsetSpring) { it } + fadeOut(tween(150))
+            ) {
                 PlayerScreen(
                     controller = controller,
                     vm = vm,
@@ -215,7 +270,7 @@ fun App(vm: MainViewModel = viewModel()) {
 }
 
 @Composable
-private fun YTTopBar(onSearch: () -> Unit, onProfile: () -> Unit) {
+private fun YTTopBar(avatarUrl: String?, onSearch: () -> Unit, onProfile: () -> Unit) {
     Surface(color = MaterialTheme.colorScheme.surface) {
         Row(
             modifier = Modifier
@@ -248,7 +303,18 @@ private fun YTTopBar(onSearch: () -> Unit, onProfile: () -> Unit) {
                 Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.search))
             }
             IconButton(onClick = onProfile) {
-                Icon(Icons.Filled.Person, contentDescription = stringResource(R.string.nav_you))
+                if (!avatarUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = avatarUrl,
+                        contentDescription = stringResource(R.string.nav_you),
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(CircleShape)
+                    )
+                } else {
+                    Icon(Icons.Filled.Person, contentDescription = stringResource(R.string.nav_you))
+                }
             }
         }
     }

@@ -2,6 +2,7 @@ package com.example.ytclient.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,23 +29,23 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.ytclient.R
+import dev.chrisbanes.haze.HazeState
 
 /** Floating mini player card that sits right above the floating nav bar. */
 @Composable
 fun MiniPlayer(
     controller: PlayerController,
     onExpand: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    hazeState: HazeState? = null
 ) {
     val item = controller.current ?: return
     if (controller.expanded) return
 
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = 3.dp,
-        shadowElevation = 12.dp
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .glass(hazeState, RoundedCornerShape(28.dp))
     ) {
         Row(
             modifier = Modifier
