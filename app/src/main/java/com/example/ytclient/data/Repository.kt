@@ -1,6 +1,9 @@
 package com.example.ytclient.data
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import org.schabi.newpipe.extractor.MediaFormat
 import org.schabi.newpipe.extractor.ServiceList
@@ -41,6 +44,11 @@ data class VideoStreams(
 object Repository {
     private val service get() = ServiceList.YouTube
 
+    private val SHORT_QUERIES = listOf(
+        "#shorts", "shorts viral", "shorts lucu", "shorts musik", "shorts gaming",
+        "shorts kuliner", "shorts hewan lucu", "shorts olahraga", "shorts tutorial", "shorts motivasi"
+    )
+
     suspend fun home(): List<VideoItem> = withContext(Dispatchers.IO) {
         val fromKiosk = runCatching {
             val kiosk = service.kioskList.defaultKioskExtractor
@@ -49,17 +57,38 @@ object Repository {
         }.getOrDefault(emptyList())
 
         val items = fromKiosk.ifEmpty { searchRaw("musik populer") }
-        items.map { it.toVideoItem() }
+        items.distinctBy { it.url }.map { it.toVideoItem() }
     }
 
     suspend fun search(query: String): List<VideoItem> = withContext(Dispatchers.IO) {
-        searchRaw(query).map { it.toVideoItem() }
+        searchRaw(query).distinctBy { it.url }.map { it.toVideoItem() }
+    }
+
+    /**
+     * Feed for the Shorts tab: runs a few short-video searches in parallel and keeps only
+     * clips of <= ~60s (or /shorts/ urls), shuffled so every load feels different.
+     */
+    suspend fun shorts(): List<VideoItem> = withContext(Dispatchers.IO) {
+        val picks = SHORT_QUERIES.shuffled().take(3)
+        val raw = coroutineScope {
+            picks.map { q -> async { runCatching { searchRaw(q) }.getOrDefault(emptyList()) } }
+                .awaitAll()
+                .flatten()
+        }
+        val distinct = raw.distinctBy { it.url }
+        val strict = distinct.filter {
+            it.streamType != StreamType.LIVE_STREAM &&
+                (it.url.contains("/shorts/") || it.duration in 1..61)
+        }
+        val pool = strict.ifEmpty { distinct.filter { it.duration in 1..120 } }
+        pool.shuffled().map { it.toVideoItem() }
     }
 
     suspend fun related(item: VideoItem): List<VideoItem> = withContext(Dispatchers.IO) {
         runCatching {
             searchRaw(item.channel.ifBlank { item.title })
                 .filter { it.url != item.url }
+                .distinctBy { it.url }
                 .map { it.toVideoItem() }
         }.getOrDefault(emptyList())
     }
@@ -74,8 +103,13 @@ object Repository {
         title = name ?: "",
         url = url ?: "",
         channel = uploaderName ?: "",
-        channelAvatar = runCatching { uploaderAvatars.maxByOrNull { it.height }?.url }.getOrNull(),
-        thumbnail = thumbnails.maxByOrNull { it.height }?.url,
+        channelAvatar = runCatching {
+            (uploaderAvatars.filter { it.height >= 48 }.minByOrNull { it.height }
+                ?: uploaderAvatars.maxByOrNull { it.height })?.url
+        }.getOrNull(),
+        // Mid-size thumbnail (>= 270px tall) instead of the biggest one: far lighter to decode while scrolling.
+        thumbnail = (thumbnails.filter { it.height >= 270 }.minByOrNull { it.height }
+            ?: thumbnails.maxByOrNull { it.height })?.url,
         durationSec = duration,
         views = viewCount,
         uploaded = textualUploadDate,
