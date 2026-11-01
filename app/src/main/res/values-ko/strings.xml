@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">YTMaterial</string>
+    <string name="nav_home">홈</string>
+    <string name="nav_shorts">Shorts</string>
+    <string name="nav_subs">구독</string>
+    <string name="nav_you">나</string>
+    <string name="search">검색</string>
+    <string name="search_hint">동영상 검색</string>
+    <string name="search_empty">입력 후 검색을 누르세요</string>
+    <string name="no_results">결과 없음</string>
+    <string name="retry">다시 시도</string>
+    <string name="close">닫기</string>
+    <string name="play">재생</string>
+    <string name="pause">일시중지</string>
+    <string name="live">LIVE</string>
+    <string name="coming_soon">곧 출시</string>
+    <string name="login_later">Google 로그인은 다음 단계에 추가됩니다.</string>
+    <string name="subscribe">구독</string>
+    <string name="like">좋아요</string>
+    <string name="share">공유</string>
+    <string name="download">다운로드</string>
+    <string name="up_next">다음 동영상</string>
+    <string name="quality">화질</string>
+    <string name="quality_auto">자동</string>
+    <string name="err_no_stream">재생 가능한 스트림을 찾을 수 없음</string>
+    <string name="views_thousand">조회수 %1$d천회</string>
+    <string name="views_million">조회수 %1$.1f백만회</string>
+    <string name="views_billion">조회수 %1$.1f십억회</string>
+    <string name="views_exact">조회수 %1$d회</string>
+    <string name="theme">테마</string>
+    <string name="theme_system">시스템</string>
+    <string name="theme_light">밝게</string>
+    <string name="theme_dark">어둡게</string>
+    <string name="color_source">색상 소스</string>
+    <string name="color_dynamic">배경화면</string>
+    <string name="color_custom">사용자 지정</string>
+    <string name="color_dynamic_hint">색상은 기기 배경화면을 따릅니다(Android 12+). 이전 버전은 기본 빨간색 테마를 사용합니다.</string>
+    <string name="custom_hex">사용자 지정 색상 (#RRGGBB)</string>
+    <string name="apply">적용</string>
+    <string name="cancel">취소</string>
+    <string name="language">언어</string>
+    <string name="language_system">시스템 기본값</string>
+    <string name="default_resolution">기본 동영상 화질</string>
+</resources>
