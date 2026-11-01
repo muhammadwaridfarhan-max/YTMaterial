@@ -41,7 +41,12 @@ import com.example.ytclient.data.VideoItem
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun VideoList(state: UiState, onRetry: () -> Unit, modifier: Modifier = Modifier) {
+fun VideoList(
+    state: UiState,
+    onRetry: () -> Unit,
+    onPlay: (VideoItem) -> Unit,
+    modifier: Modifier = Modifier
+) {
     when (state) {
         is UiState.Loading -> Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             LoadingIndicator()
@@ -69,14 +74,14 @@ fun VideoList(state: UiState, onRetry: () -> Unit, modifier: Modifier = Modifier
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(state.items) { VideoCard(it) }
+                items(state.items) { VideoCard(it, onClick = { onPlay(it) }) }
             }
         }
     }
 }
 
 @Composable
-fun SearchScreen(vm: MainViewModel) {
+fun SearchScreen(vm: MainViewModel, onPlay: (VideoItem) -> Unit) {
     val focus = LocalFocusManager.current
     Column(Modifier.fillMaxSize()) {
         OutlinedTextField(
@@ -101,14 +106,18 @@ fun SearchScreen(vm: MainViewModel) {
                 Text("Ketik lalu tekan cari")
             }
         } else {
-            VideoList(state, onRetry = vm::runSearch)
+            VideoList(state, onRetry = vm::runSearch, onPlay = onPlay)
         }
     }
 }
 
 @Composable
-fun VideoCard(item: VideoItem, modifier: Modifier = Modifier) {
-    Card(modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
+fun VideoCard(item: VideoItem, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Card(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraLarge
+    ) {
         Box {
             AsyncImage(
                 model = item.thumbnail,
