@@ -42,4 +42,10 @@
     <string name="language">Bahasa</string>
     <string name="language_system">Bawaan sistem</string>
     <string name="default_resolution">Kualitas video default</string>
+    <string name="sign_in_google">Masuk dengan Google</string>
+    <string name="sign_out">Keluar</string>
+    <string name="login_subtitle">Masuk untuk menampilkan profil Google kamu di aplikasi.</string>
+    <string name="login_not_configured">Login Google belum diatur (client ID belum diisi).</string>
+    <string name="login_no_account">Tidak ada akun Google di perangkat ini.</string>
+    <string name="login_failed">Gagal masuk. Coba lagi.</string>
 </resources>
