@@ -12,8 +12,14 @@ android {
         applicationId = "com.example.ytclient"
         minSdk = 26
         targetSdk = 36
-        versionCode = 4
-        versionName = "0.4.0"
+        versionCode = 5
+        versionName = "0.5.0"
+
+        // OAuth *Web* client ID for "Sign in with Google" (see README steps). Empty = login disabled.
+        val webClientId = (project.findProperty("GOOGLE_WEB_CLIENT_ID") as String?)
+            ?: System.getenv("GOOGLE_WEB_CLIENT_ID")
+            ?: ""
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$webClientId\"")
     }
 
     buildTypes {
@@ -30,6 +36,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     packaging {
@@ -60,6 +67,10 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.1.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
+    implementation("androidx.credentials:credentials:1.5.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+    implementation("dev.chrisbanes.haze:haze:1.6.10")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
