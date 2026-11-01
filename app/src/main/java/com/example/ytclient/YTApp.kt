@@ -24,18 +24,19 @@ class YTApp : Application() {
 
     companion object {
         fun applyLanguage(context: Context, language: AppLanguage) {
-            val desired = language.tag ?: ""
+            val tag = language.tag
+            val desired = tag ?: ""
             val current = AppCompatDelegate.getApplicationLocales().toLanguageTags()
             if (current != desired) {
-                val locales = if (language.tag == null) {
-                    LocaleListCompat.getEmpty()
+                val locales = if (tag == null) {
+                    LocaleListCompat.getEmptyLocaleList()
                 } else {
-                    LocaleListCompat.forLanguageTags(language.tag)
+                    LocaleListCompat.forLanguageTags(tag)
                 }
                 AppCompatDelegate.setApplicationLocales(locales)
             }
 
-            val locale = language.tag?.let { Locale.forLanguageTag(it) } ?: Locale.getDefault()
+            val locale = tag?.let { Locale.forLanguageTag(it) } ?: Locale.getDefault()
             val country = locale.country.ifBlank { if (locale.language == "id") "ID" else "US" }
             NewPipe.init(
                 AppDownloader(),
