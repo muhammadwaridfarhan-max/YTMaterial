@@ -25,8 +25,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Share
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -65,6 +65,7 @@ import com.example.ytclient.R
 import com.example.ytclient.ui.components.VideoCard
 import com.example.ytclient.ui.components.formatViews
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 fun PlayerScreen(
@@ -212,6 +213,139 @@ fun PlayerScreen(
                             AssistChip(
                                 onClick = { },
                                 label = { Text(stringResource(R.string.like)) },
+                                leadingIcon = {
+                                    Icon(Icons.Filled.ThumbUp, contentDescription = null)
+                                }
+                            )
+                            AssistChip(
+                                onClick = { },
+                                label = { Text(stringResource(R.string.share)) },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Filled.Share,
+                                        contentDescription = null
+                                    )
+                                }
+                            )
+                            AssistChip(
+                                onClick = { },
+                                label = { Text(stringResource(R.string.download)) },
+                                leadingIcon = {
+                                    Icon(Icons.Filled.Download, contentDescription = null)
+                                }
+                            )
+                        }
+                    }
+                    HorizontalDivider()
+                    Text(
+                        stringResource(R.string.up_next),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+
+                when (val rs = vm.relatedState) {
+                    null, UiState.Loading -> item {
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp),
+                            contentAlignment = Alignment.Center
+                        ) { LoadingIndicator() }
+                    }
+
+                    is UiState.Error -> item {
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                rs.message,
+                                Modifier.weight(1f),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            TextButton(onClick = { vm.loadRelated(item) }) {
+                                Text(stringResource(R.string.retry))
+                            }
+                        }
+                    }
+
+                    is UiState.Success -> items(rs.items, key = { it.url }) { video ->
+                        VideoCard(video, onClick = { controller.open(video) })
+                    }
+                }
+            }
+        }
+    }
+
+    if (showQualitySheet) {
+        val streams = controller.streams
+        ModalBottomSheet(onDismissRequest = { showQualitySheet = false }) {
+            Column(Modifier.padding(bottom = 32.dp)) {
+                Text(
+                    stringResource(R.string.quality),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                )
+                if (streams == null) {
+                    Text(
+                        stringResource(R.string.err_no_stream),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(horizontal = 24.dp)
+                    )
+                } else {
+                    QualityRow(
+                        label = stringResource(R.string.quality_auto),
+                        selected = controller.qualityHeight == -1
+                    ) {
+                        controller.setQuality(-1)
+                        showQualitySheet = false
+                    }
+                    streams.heights.forEach { h ->
+                        QualityRow(
+                            label = "${h}p",
+                            selected = controller.qualityHeight == h
+                        ) {
+                            controller.setQuality(h)
+                            showQualitySheet = false
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun QualityRow(label: String, selected: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        color = if (selected) {
+            MaterialTheme.colorScheme.secondaryContainer
+        } else {
+            MaterialTheme.colorScheme.surface
+        },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            Modifier.padding(horizontal = 24.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(label, style = MaterialTheme.typography.bodyLarge)
+            if (selected) {
+                Spacer(Modifier.weight(1f))
+                Icon(
+                    Icons.Filled.ThumbUp,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+}e(R.string.like)) },
                                 leadingIcon = {
                                     Icon(Icons.Filled.ThumbUp, contentDescription = null)
                                 }
