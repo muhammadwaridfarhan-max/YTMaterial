@@ -1,30 +1,33 @@
-package com.example.ytclient.ui.theme
-
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.MaterialExpressiveTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private val DarkColors = darkColorScheme(
+    background = Color(0xFF121212), // Warna gelap standar YouTube
+    surface = Color(0xFF121212)
+)
+
+private val LightColors = lightColorScheme()
+
 @Composable
-fun YTTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+fun YTMaterialTheme(
+    useDarkTheme: Boolean = isSystemInDarkTheme(),
+    useDynamicColors: Boolean = true, // Ubah ke false untuk mode "satu warna"
     content: @Composable () -> Unit
 ) {
-    val context = LocalContext.current
     val colorScheme = when {
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        darkTheme -> darkColorScheme()
-        else -> lightColorScheme()
+        useDynamicColors && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            val context = LocalContext.current
+            if (useDarkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        }
+        useDarkTheme -> DarkColors
+        else -> LightColors
     }
-    MaterialExpressiveTheme(
+
+    MaterialTheme(
         colorScheme = colorScheme,
         content = content
     )
