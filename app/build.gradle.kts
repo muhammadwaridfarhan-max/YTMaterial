@@ -12,8 +12,8 @@ android {
         applicationId = "com.example.ytclient"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.2.0"
+        versionCode = 3
+        versionName = "0.3.0"
     }
 
     buildTypes {
@@ -48,10 +48,13 @@ dependencies {
     implementation(composeBom)
     implementation("androidx.compose.material3:material3:1.5.0-alpha18")
     implementation("androidx.compose.material:material-icons-core")
+    implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.activity:activity-compose:1.10.1")
+    implementation("androidx.appcompat:appcompat:1.7.1")
+    implementation("androidx.datastore:datastore-preferences:1.1.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
@@ -60,6 +63,7 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer-hls:1.8.0")
     implementation("androidx.media3:media3-ui:1.8.0")
     implementation("com.github.TeamNewPipe:NewPipeExtractor:v0.26.5")
+    implementation("com.google.android.material:material-color-utilities:1.7.0")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs_nio:2.1.5")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
