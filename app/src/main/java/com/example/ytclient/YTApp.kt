@@ -8,6 +8,7 @@ import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
+import com.example.ytclient.auth.AccountManager
 import com.example.ytclient.data.AppDownloader
 import com.example.ytclient.settings.AppLanguage
 import com.example.ytclient.settings.SettingsManager
@@ -34,6 +35,7 @@ class YTApp : Application(), ImageLoaderFactory {
     override fun onCreate() {
         super.onCreate()
         SettingsManager.init(this)
+        AccountManager.init(this)
         val language = runBlocking { SettingsManager.settings.first() }.language
         applyLanguage(this, language)
     }
