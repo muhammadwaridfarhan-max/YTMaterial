@@ -27,12 +27,18 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.ytclient.R
 import com.example.ytclient.data.VideoItem
 
 @Composable
-fun SearchScreen(vm: MainViewModel, onBack: () -> Unit, onPlay: (VideoItem) -> Unit) {
+fun SearchScreen(
+    vm: MainViewModel,
+    onBack: () -> Unit,
+    onPlay: (VideoItem) -> Unit,
+    bottomPadding: Dp = 0.dp
+) {
     val focusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
 
@@ -95,7 +101,7 @@ fun SearchScreen(vm: MainViewModel, onBack: () -> Unit, onPlay: (VideoItem) -> U
                 )
             }
         } else {
-            VideoList(state, onRetry = vm::runSearch, onPlay = onPlay)
+            VideoList(state, onRetry = vm::runSearch, onPlay = onPlay, bottomPadding = bottomPadding)
         }
     }
 }

@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ytclient.data.Repository
 import com.example.ytclient.data.VideoItem
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 sealed interface UiState {
@@ -26,6 +27,13 @@ class MainViewModel : ViewModel() {
     var query by mutableStateOf("")
     var selectedFilter by mutableIntStateOf(0)
         private set
+
+    var shortsState by mutableStateOf<UiState>(UiState.Loading)
+        private set
+    /** Last settled page of the Shorts pager, so the tab resumes where you left it. */
+    var shortsIndex by mutableIntStateOf(0)
+    private var shortsJob: Job? = null
+    private var shortsLoadingMore = false
 
     private var lastFilterLabel: String? = null
 
@@ -77,6 +85,38 @@ class MainViewModel : ViewModel() {
                 onSuccess = { UiState.Success(it) },
                 onFailure = { UiState.Error(it.message ?: "Pencarian gagal") }
             )
+        }
+    }
+
+    fun loadShorts(force: Boolean = false) {
+        if (!force && (shortsState is UiState.Success || shortsJob?.isActive == true)) return
+        shortsJob?.cancel()
+        shortsIndex = 0
+        shortsJob = viewModelScope.launch {
+            shortsState = UiState.Loading
+            shortsState = runCatching { Repository.shorts() }.fold(
+                onSuccess = {
+                    if (it.isEmpty()) UiState.Error("Shorts tidak ditemukan")
+                    else UiState.Success(it)
+                },
+                onFailure = { UiState.Error(it.message ?: "Gagal memuat Shorts") }
+            )
+        }
+    }
+
+    fun loadMoreShorts() {
+        if (shortsLoadingMore || shortsState !is UiState.Success) return
+        shortsLoadingMore = true
+        viewModelScope.launch {
+            try {
+                val more = runCatching { Repository.shorts() }.getOrDefault(emptyList())
+                val latest = (shortsState as? UiState.Success)?.items ?: return@launch
+                val seen = latest.mapTo(HashSet()) { it.url }
+                val fresh = more.filter { seen.add(it.url) }
+                if (fresh.isNotEmpty()) shortsState = UiState.Success(latest + fresh)
+            } finally {
+                shortsLoadingMore = false
+            }
         }
     }
 

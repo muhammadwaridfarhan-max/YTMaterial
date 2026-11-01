@@ -23,20 +23,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.ytclient.R
 import com.example.ytclient.data.VideoItem
 import com.example.ytclient.ui.components.VideoCard
 
 @Composable
-fun HomeScreen(vm: MainViewModel, onPlay: (VideoItem) -> Unit) {
+fun HomeScreen(vm: MainViewModel, onPlay: (VideoItem) -> Unit, bottomPadding: Dp = 0.dp) {
     val filters = stringArrayResource(R.array.home_filters)
     Column(Modifier.fillMaxSize()) {
         LazyRow(
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            itemsIndexed(filters.toList()) { index, label ->
+            itemsIndexed(filters) { index, label ->
                 FilterChip(
                     selected = vm.selectedFilter == index,
                     onClick = { vm.selectFilter(index, label) },
@@ -44,7 +45,12 @@ fun HomeScreen(vm: MainViewModel, onPlay: (VideoItem) -> Unit) {
                 )
             }
         }
-        HomeVideoList(state = vm.homeState, onRetry = vm::retryFilter, onPlay = onPlay)
+        HomeVideoList(
+            state = vm.homeState,
+            onRetry = vm::retryFilter,
+            onPlay = onPlay,
+            bottomPadding = bottomPadding
+        )
     }
 }
 
@@ -54,7 +60,8 @@ private fun HomeVideoList(
     state: UiState,
     onRetry: () -> Unit,
     onPlay: (VideoItem) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    bottomPadding: Dp = 0.dp
 ) {
     when (state) {
         is UiState.Loading -> Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -80,10 +87,12 @@ private fun HomeVideoList(
         } else {
             LazyColumn(
                 modifier = modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                contentPadding = PaddingValues(
+                    start = 12.dp, end = 12.dp, top = 4.dp, bottom = 8.dp + bottomPadding
+                ),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(state.items, key = { it.url }) { video ->
+                items(state.items, key = { it.url }, contentType = { "video" }) { video ->
                     VideoCard(video, onClick = { onPlay(video) })
                 }
             }

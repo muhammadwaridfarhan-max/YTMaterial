@@ -4,11 +4,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Pause
@@ -21,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -28,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.ytclient.R
 
+/** Floating mini player card that sits right above the floating nav bar. */
 @Composable
 fun MiniPlayer(
     controller: PlayerController,
@@ -39,13 +41,16 @@ fun MiniPlayer(
 
     Surface(
         modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
         tonalElevation = 3.dp,
-        shadowElevation = 10.dp
+        shadowElevation = 12.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(onClick = onExpand),
+                .clickable(onClick = onExpand)
+                .padding(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             AsyncImage(
@@ -53,14 +58,15 @@ fun MiniPlayer(
                 contentDescription = item.title,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .width(120.dp)
-                    .height(68.dp)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                    .width(96.dp)
+                    .height(56.dp)
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
             )
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                    .padding(horizontal = 12.dp)
             ) {
                 Text(
                     item.title,
