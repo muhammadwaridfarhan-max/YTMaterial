@@ -16,7 +16,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.LoadingIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -45,13 +44,13 @@ fun HomeScreen(vm: MainViewModel, onPlay: (VideoItem) -> Unit) {
                 )
             }
         }
-        VideoList(state = vm.homeState, onRetry = vm::retryFilter, onPlay = onPlay)
+        HomeVideoList(state = vm.homeState, onRetry = vm::retryFilter, onPlay = onPlay)
     }
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun VideoList(
+private fun HomeVideoList(
     state: UiState,
     onRetry: () -> Unit,
     onPlay: (VideoItem) -> Unit,
