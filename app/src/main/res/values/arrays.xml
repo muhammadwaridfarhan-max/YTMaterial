@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="home_filters">
+        <item>All</item>
+        <item>Music</item>
+        <item>Gaming</item>
+        <item>News</item>
+        <item>Sports</item>
+        <item>Comedy</item>
+        <item>Technology</item>
+        <item>Cooking</item>
+        <item>Live</item>
+    </string-array>
+</resources>
