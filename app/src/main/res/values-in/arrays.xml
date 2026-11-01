@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="home_filters">
+        <item>Semua</item>
+        <item>Musik</item>
+        <item>Game</item>
+        <item>Berita</item>
+        <item>Olahraga</item>
+        <item>Komedi</item>
+        <item>Teknologi</item>
+        <item>Memasak</item>
+        <item>Live</item>
+    </string-array>
+</resources>
