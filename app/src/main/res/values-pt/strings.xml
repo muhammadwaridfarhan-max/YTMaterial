@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">YTMaterial</string>
+    <string name="nav_home">Início</string>
+    <string name="nav_shorts">Shorts</string>
+    <string name="nav_subs">Inscrições</string>
+    <string name="nav_you">Você</string>
+    <string name="search">Pesquisar</string>
+    <string name="search_hint">Pesquisar vídeos</string>
+    <string name="search_empty">Digite algo e pressione pesquisar</string>
+    <string name="no_results">Sem resultados</string>
+    <string name="retry">Tentar novamente</string>
+    <string name="close">Fechar</string>
+    <string name="play">Reproduzir</string>
+    <string name="pause">Pausar</string>
+    <string name="live">LIVE</string>
+    <string name="coming_soon">Em breve</string>
+    <string name="login_later">O login com Google virá em uma fase posterior.</string>
+    <string name="subscribe">Inscrever-se</string>
+    <string name="like">Gostei</string>
+    <string name="share">Compartilhar</string>
+    <string name="download">Baixar</string>
+    <string name="up_next">A seguir</string>
+    <string name="quality">Qualidade</string>
+    <string name="quality_auto">Automática</string>
+    <string name="err_no_stream">Nenhuma transmissão reproduzível encontrada</string>
+    <string name="views_thousand">%1$d mil visualizações</string>
+    <string name="views_million">%1$.1f mi visualizações</string>
+    <string name="views_billion">%1$.1f bi visualizações</string>
+    <string name="views_exact">%1$d visualizações</string>
+    <string name="theme">Tema</string>
+    <string name="theme_system">Sistema</string>
+    <string name="theme_light">Claro</string>
+    <string name="theme_dark">Escuro</string>
+    <string name="color_source">Origem da cor</string>
+    <string name="color_dynamic">Wallpaper</string>
+    <string name="color_custom">Personalizado</string>
+    <string name="color_dynamic_hint">As cores seguem o papel de parede (Android 12+). Em versões antigas, um tema vermelho padrão é usado.</string>
+    <string name="custom_hex">Hex personalizado (#RRGGBB)</string>
+    <string name="apply">Aplicar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="language">Idioma</string>
+    <string name="language_system">Padrão do sistema</string>
+    <string name="default_resolution">Qualidade de vídeo padrão</string>
+</resources>
