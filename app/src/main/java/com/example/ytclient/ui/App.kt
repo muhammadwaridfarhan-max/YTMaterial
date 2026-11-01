@@ -19,6 +19,8 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -26,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.ytclient.data.VideoItem
 
 private data class Tab(val title: String, val icon: ImageVector)
 
@@ -38,41 +41,46 @@ fun App(vm: MainViewModel = viewModel()) {
         Tab("Kamu", Icons.Filled.Person)
     )
     var selected by rememberSaveable { mutableIntStateOf(0) }
+    var playing by remember { mutableStateOf<VideoItem?>(null) }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
-    Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = {
-            LargeFlexibleTopAppBar(
-                title = { Text(tabs[selected].title) },
-                scrollBehavior = scrollBehavior
-            )
-        },
-        bottomBar = {
-            NavigationBar {
-                tabs.forEachIndexed { index, tab ->
-                    NavigationBarItem(
-                        selected = selected == index,
-                        onClick = { selected = index },
-                        icon = { Icon(tab.icon, contentDescription = tab.title) },
-                        label = { Text(tab.title) }
-                    )
+    Box(Modifier.fillMaxSize()) {
+        Scaffold(
+            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+            topBar = {
+                LargeFlexibleTopAppBar(
+                    title = { Text(tabs[selected].title) },
+                    scrollBehavior = scrollBehavior
+                )
+            },
+            bottomBar = {
+                NavigationBar {
+                    tabs.forEachIndexed { index, tab ->
+                        NavigationBarItem(
+                            selected = selected == index,
+                            onClick = { selected = index },
+                            icon = { Icon(tab.icon, contentDescription = tab.title) },
+                            label = { Text(tab.title) }
+                        )
+                    }
+                }
+            }
+        ) { padding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
+                when (selected) {
+                    0 -> VideoList(vm.homeState, onRetry = vm::loadHome, onPlay = { playing = it })
+                    1 -> SearchScreen(vm, onPlay = { playing = it })
+                    else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Login Google menyusul di tahap 4")
+                    }
                 }
             }
         }
-    ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            when (selected) {
-                0 -> VideoList(vm.homeState, onRetry = vm::loadHome)
-                1 -> SearchScreen(vm)
-                else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Login Google menyusul di tahap 4")
-                }
-            }
-        }
+
+        playing?.let { PlayerScreen(it, onBack = { playing = null }) }
     }
 }
