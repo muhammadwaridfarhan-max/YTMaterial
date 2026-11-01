@@ -1,14 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string-array name="home_filters">
-        <item>All</item>
-        <item>Music</item>
-        <item>Gaming</item>
-        <item>News</item>
-        <item>Sports</item>
-        <item>Comedy</item>
-        <item>Technology</item>
-        <item>Cooking</item>
-        <item>Live</item>
-    </string-array>
+    <string name="app_name">YTMaterial</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_shorts">Shorts</string>
+    <string name="nav_subs">Subscriptions</string>
+    <string name="nav_you">You</string>
+    <string name="search">Search</string>
+    <string name="search_hint">Search videos</string>
+    <string name="search_empty">Type something, then press search</string>
+    <string name="no_results">No results</string>
+    <string name="retry">Retry</string>
+    <string name="close">Close</string>
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
+    <string name="live">LIVE</string>
+    <string name="coming_soon">Coming soon</string>
+    <string name="login_later">Google sign-in is coming in a later phase.</string>
+    <string name="subscribe">Subscribe</string>
+    <string name="like">Like</string>
+    <string name="share">Share</string>
+    <string name="download">Download</string>
+    <string name="up_next">Up next</string>
+    <string name="quality">Quality</string>
+    <string name="quality_auto">Auto</string>
+    <string name="err_no_stream">No playable stream found</string>
+    <string name="views_thousand">%1$dK views</string>
+    <string name="views_million">%1$.1fM views</string>
+    <string name="views_billion">%1$.1fB views</string>
+    <string name="views_exact">%1$d views</string>
+    <string name="theme">Theme</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="color_source">Color source</string>
+    <string name="color_dynamic">Wallpaper</string>
+    <string name="color_custom">Custom</string>
+    <string name="color_dynamic_hint">Colors follow your device wallpaper (Android 12+). On older versions a default red theme is used.</string>
+    <string name="custom_hex">Custom hex (#RRGGBB)</string>
+    <string name="apply">Apply</string>
+    <string name="cancel">Cancel</string>
+    <string name="language">Language</string>
+    <string name="language_system">System default</string>
+    <string name="default_resolution">Default video quality</string>
+    <string name="sign_in_google">Sign in with Google</string>
+    <string name="sign_out">Sign out</string>
+    <string name="login_subtitle">Sign in to show your Google profile in the app.</string>
+    <string name="login_not_configured">Google sign-in is not set up yet (missing client ID).</string>
+    <string name="login_no_account">No Google account found on this device.</string>
+    <string name="login_failed">Sign-in failed. Please try again.</string>
 </resources>
