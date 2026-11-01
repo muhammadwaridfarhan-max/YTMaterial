@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">YTMaterial</string>
+    <string name="nav_home">Beranda</string>
+    <string name="nav_shorts">Shorts</string>
+    <string name="nav_subs">Subscription</string>
+    <string name="nav_you">Kamu</string>
+    <string name="search">Cari</string>
+    <string name="search_hint">Cari video</string>
+    <string name="search_empty">Ketik sesuatu, lalu tekan cari</string>
+    <string name="no_results">Tidak ada hasil</string>
+    <string name="retry">Coba lagi</string>
+    <string name="close">Tutup</string>
+    <string name="play">Putar</string>
+    <string name="pause">Jeda</string>
+    <string name="live">LIVE</string>
+    <string name="coming_soon">Segera hadir</string>
+    <string name="login_later">Login Google menyusul di tahap berikutnya.</string>
+    <string name="subscribe">Subscribe</string>
+    <string name="like">Suka</string>
+    <string name="share">Bagikan</string>
+    <string name="download">Unduh</string>
+    <string name="up_next">Berikutnya</string>
+    <string name="quality">Kualitas</string>
+    <string name="quality_auto">Otomatis</string>
+    <string name="err_no_stream">Tidak ada stream yang bisa diputar</string>
+    <string name="views_thousand">%1$d rb x ditonton</string>
+    <string name="views_million">%1$.1f jt x ditonton</string>
+    <string name="views_billion">%1$.1f M x ditonton</string>
+    <string name="views_exact">%1$d x ditonton</string>
+    <string name="theme">Tema</string>
+    <string name="theme_system">Sistem</string>
+    <string name="theme_light">Terang</string>
+    <string name="theme_dark">Gelap</string>
+    <string name="color_source">Sumber warna</string>
+    <string name="color_dynamic">Wallpaper</string>
+    <string name="color_custom">Kustom</string>
+    <string name="color_dynamic_hint">Warna mengikuti wallpaper perangkat (Android 12+). Di versi lebih lama, tema merah bawaan digunakan.</string>
+    <string name="custom_hex">Hex kustom (#RRGGBB)</string>
+    <string name="apply">Terapkan</string>
+    <string name="cancel">Batal</string>
+    <string name="language">Bahasa</string>
+    <string name="language_system">Bawaan sistem</string>
+    <string name="default_resolution">Kualitas video default</string>
+</resources>
