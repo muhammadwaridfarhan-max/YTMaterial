@@ -64,7 +64,10 @@ import kotlinx.coroutines.launch
 private enum class SettingsDialog { THEME, COLOR, LANGUAGE, RESOLUTION }
 
 @Composable
-fun YouScreen(bottomPadding: androidx.compose.ui.unit.Dp = 0.dp) {
+fun YouScreen(
+    topPadding: androidx.compose.ui.unit.Dp = 0.dp,
+    bottomPadding: androidx.compose.ui.unit.Dp = 0.dp
+) {
     val scope = rememberCoroutineScope()
     val settings by SettingsManager.settings.collectAsState(initial = AppSettings())
     var dialog by remember { mutableStateOf<SettingsDialog?>(null) }
@@ -72,7 +75,7 @@ fun YouScreen(bottomPadding: androidx.compose.ui.unit.Dp = 0.dp) {
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(
-            start = 16.dp, end = 16.dp, top = 16.dp, bottom = 16.dp + bottomPadding
+            start = 16.dp, end = 16.dp, top = 16.dp + topPadding, bottom = 16.dp + bottomPadding
         )
     ) {
         item {
