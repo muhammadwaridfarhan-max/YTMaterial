@@ -42,10 +42,19 @@
     <string name="language">Language</string>
     <string name="language_system">System default</string>
     <string name="default_resolution">Default video quality</string>
-    <string name="sign_in_google">Sign in with Google</string>
+    <string name="playback_speed">Playback speed</string>
+    <string name="fullscreen">Fullscreen</string>
+    <string name="login_title">Sign in with Google</string>
+    <string name="login_step">On your phone or computer, open the page below and enter this code, just like signing in to YouTube on a TV.</string>
+    <string name="login_open">Open google.com/device</string>
+    <string name="login_copy">Copy code</string>
+    <string name="login_copied">Code copied</string>
+    <string name="login_waiting">Waiting for you to confirm…</string>
+    <string name="login_success">Signed in!</string>
+    <string name="login_failed">Sign-in failed</string>
+    <string name="login_hint">Sign in with a code, like on YouTube TV</string>
+    <string name="sign_in">Sign in with Google</string>
+    <string name="sign_in_short">Sign in</string>
+    <string name="signed_in">Signed in with Google</string>
     <string name="sign_out">Sign out</string>
-    <string name="login_subtitle">Sign in to show your Google profile in the app.</string>
-    <string name="login_not_configured">Google sign-in is not set up yet (missing client ID).</string>
-    <string name="login_no_account">No Google account found on this device.</string>
-    <string name="login_failed">Sign-in failed. Please try again.</string>
 </resources>
