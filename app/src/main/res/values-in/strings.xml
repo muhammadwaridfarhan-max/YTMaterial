@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="login_subtitle">Masuk untuk menyinkronkan subscription kamu</string>
+    <string name="login_not_configured">Login Google belum dikonfigurasi</string>
+    <string name="login_no_account">Tidak ada akun Google di perangkat ini</string>
+    <string name="sign_in_google">Masuk dengan Google</string>
     <string name="app_name">YTMaterial</string>
     <string name="nav_home">Beranda</string>
     <string name="nav_shorts">Shorts</string>
