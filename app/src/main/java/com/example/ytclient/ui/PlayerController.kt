@@ -60,6 +60,7 @@ class PlayerController(context: Context) {
     var speed by mutableFloatStateOf(1f)
         private set
 
+    @JvmName("changeSpeed")
     fun setSpeed(value: Float) {
         speed = value
         player.setPlaybackSpeed(value)
@@ -114,81 +115,4 @@ class PlayerController(context: Context) {
     fun close() {
         job?.cancel()
         player.stop()
-        player.clearMediaItems()
-        current = null
-        streams = null
-        error = null
-        expanded = false
-        isFullscreen = false
-    }
-
-    fun release() {
-        scope.cancel()
-        player.release()
-    }
-
-    private fun load() {
-        val item = current ?: return
-        job?.cancel()
-        job = scope.launch {
-            isLoading = true
-            error = null
-            runCatching { Repository.resolveStreams(item.url) }
-                .onSuccess { result ->
-                    streams = result
-                    applySource()
-                }
-                .onFailure {
-                    isLoading = false
-                    error = it.message
-                }
-        }
-    }
-
-    private fun applySource() {
-        val s = streams ?: return
-        try {
-            player.setMediaSource(buildSource(s))
-            player.prepare()
-            player.playWhenReady = true
-            error = null
-        } catch (t: Throwable) {
-            error = t.message
-        } finally {
-            isLoading = false
-        }
-    }
-
-    private fun buildSource(s: VideoStreams): MediaSource {
-        val dsf = DefaultHttpDataSource.Factory()
-            .setUserAgent(USER_AGENT)
-            .setAllowCrossProtocolRedirects(true)
-
-        fun progressive(url: String): MediaSource =
-            ProgressiveMediaSource.Factory(dsf).createMediaSource(MediaItem.fromUri(url))
-
-        if (s.isLive && s.hlsUrl != null) {
-            return HlsMediaSource.Factory(dsf).createMediaSource(MediaItem.fromUri(s.hlsUrl))
-        }
-
-        val cap = if (qualityHeight <= 0) 720 else qualityHeight
-        val video = s.videoOnly.firstOrNull { it.height <= cap } ?: s.videoOnly.lastOrNull()
-        if (video != null && s.audioUrl != null) {
-            return MergingMediaSource(progressive(video.url), progressive(s.audioUrl))
-        }
-
-        val progressiveTrack =
-            s.progressive.firstOrNull { it.height <= cap } ?: s.progressive.lastOrNull()
-        if (progressiveTrack != null) return progressive(progressiveTrack.url)
-
-        if (s.hlsUrl != null) {
-            return HlsMediaSource.Factory(dsf).createMediaSource(MediaItem.fromUri(s.hlsUrl))
-        }
-        error("No playable stream found")
-    }
-
-    companion object {
-        private const val USER_AGENT =
-            "Mozilla/5.0 (Windows NT 10.0; rv:128.0) Gecko/20100101 Firefox/128.0"
-    }
-}
+        player.clearMediaItems(
