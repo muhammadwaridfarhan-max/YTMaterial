@@ -30,10 +30,10 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
@@ -41,8 +41,8 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Subscriptions
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -62,6 +62,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
@@ -80,260 +81,4 @@ import dev.chrisbanes.haze.hazeSource
 
 @Composable
 fun App(vm: MainViewModel = viewModel()) {
-    val context = LocalContext.current
-    val controller = remember { PlayerController(context.applicationContext) }
-    val shortsPlayer = remember { ShortsPlayer(context.applicationContext) }
-    DisposableEffect(Unit) {
-        onDispose {
-            controller.release()
-            shortsPlayer.release()
-        }
-    }
-
-    val tabs = remember {
-        listOf(
-            NavTab(R.string.nav_home, Icons.Filled.Home),
-            NavTab(R.string.nav_shorts, Icons.Filled.PlayCircle),
-            NavTab(R.string.nav_subs, Icons.Filled.Subscriptions),
-            NavTab(R.string.nav_you, Icons.Filled.Person)
-        )
-    }
-    var selected by rememberSaveable { mutableIntStateOf(0) }
-    var searching by rememberSaveable { mutableStateOf(false) }
-    var barVisible by remember { mutableStateOf(true) }
-    val tabState = rememberSaveableStateHolder()
-    val hazeState = remember { HazeState() }
-    val user by AccountManager.user.collectAsState(initial = null)
-
-    // Show the bar again whenever the tab changes; keep the two players from overlapping.
-    LaunchedEffect(selected) { barVisible = true }
-    LaunchedEffect(controller.isPlayingState) {
-        if (controller.isPlayingState) shortsPlayer.pause()
-    }
-
-    // Hide the floating bar while scrolling down, bring it back on scroll up.
-    val scrollConnection = remember {
-        object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                if (available.y < -8f) barVisible = false
-                else if (available.y > 8f) barVisible = true
-                return Offset.Zero
-            }
-        }
-    }
-    val showBar = (barVisible || selected == 1) && !searching
-
-    // Space that screens must leave at the bottom so nothing hides behind the floating UI.
-    val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    val miniVisible = controller.current != null && !controller.expanded
-    val contentBottom by animateDpAsState(
-        targetValue = navBottom + 84.dp + if (miniVisible) 76.dp else 0.dp,
-        label = "contentBottom"
-    )
-
-    BackHandler(enabled = selected != 0 && !searching) { selected = 0 }
-    BackHandler(enabled = searching) { searching = false }
-
-    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
-        Box(Modifier.fillMaxSize()) {
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .hazeSource(hazeState)
-                    .nestedScroll(scrollConnection)
-            ) {
-                if (selected != 1) {
-                    YTTopBar(
-                        avatarUrl = user?.photoUrl,
-                        onSearch = { searching = true },
-                        onProfile = { selected = 3 }
-                    )
-                }
-                Box(
-                    Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                ) {
-                    AnimatedContent(
-                        targetState = selected,
-                        modifier = Modifier.fillMaxSize(),
-                        transitionSpec = {
-                            val dir = if (targetState > initialState) 1 else -1
-                            (slideInHorizontally(OffsetSpring) { dir * it / 5 } +
-                                fadeIn(SoftSpring) +
-                                scaleIn(SoftSpring, initialScale = 0.95f)) togetherWith
-                                (slideOutHorizontally(OffsetSpring) { -dir * it / 5 } +
-                                    fadeOut(tween(120)))
-                        },
-                        label = "tabs"
-                    ) { tab ->
-                        // Keeps each tab's scroll position when switching tabs.
-                        tabState.SaveableStateProvider(tab) {
-                        when (tab) {
-                            0 -> HomeScreen(
-                                vm,
-                                onPlay = controller::open,
-                                bottomPadding = contentBottom
-                            )
-
-                            1 -> ShortsScreen(
-                                vm = vm,
-                                shorts = shortsPlayer,
-                                mainPlayer = controller,
-                                onSearch = { searching = true },
-                                bottomPadding = contentBottom
-                            )
-
-                            2 -> Placeholder(Icons.Filled.Subscriptions, R.string.nav_subs)
-                            else -> YouScreen(bottomPadding = contentBottom)
-                        }
-                        }
-                    }
-                }
-            }
-
-            AnimatedVisibility(
-                visible = searching,
-                enter = slideInVertically(OffsetSpring) { it / 6 } +
-                    fadeIn(SoftSpring) +
-                    scaleIn(SoftSpring, initialScale = 0.94f),
-                exit = fadeOut(tween(150)) + scaleOut(targetScale = 0.96f)
-            ) {
-                Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
-                    Column(
-                        Modifier
-                            .fillMaxSize()
-                            .statusBarsPadding()
-                    ) {
-                        SearchScreen(
-                            vm,
-                            onBack = { searching = false },
-                            onPlay = controller::open,
-                            bottomPadding = contentBottom
-                        )
-                    }
-                }
-            }
-
-            // Floating layer: mini player card + pill nav bar.
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .padding(bottom = 12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                AnimatedVisibility(
-                    visible = miniVisible,
-                    enter = slideInVertically(OffsetSpring) { it } +
-                        scaleIn(SoftSpring, initialScale = 0.85f) +
-                        fadeIn(SoftSpring),
-                    exit = slideOutVertically(OffsetSpring) { it } + fadeOut(tween(150))
-                ) {
-                    MiniPlayer(
-                        controller = controller,
-                        onExpand = { controller.expanded = true },
-                        hazeState = hazeState,
-                        modifier = Modifier
-                            .padding(horizontal = 12.dp)
-                            .padding(bottom = 8.dp)
-                    )
-                }
-                AnimatedVisibility(
-                    visible = showBar,
-                    enter = slideInVertically(OffsetSpring) { it } + fadeIn(SoftSpring),
-                    exit = slideOutVertically(OffsetSpring) { it } + fadeOut(tween(150))
-                ) {
-                    FloatingNavBar(
-                        tabs = tabs,
-                        selected = selected,
-                        onSelect = { selected = it },
-                        hazeState = hazeState
-                    )
-                }
-            }
-
-            AnimatedVisibility(
-                visible = controller.current != null && controller.expanded,
-                enter = slideInVertically(OffsetSpring) { it } + fadeIn(SoftSpring),
-                exit = slideOutVertically(OffsetSpring) { it } + fadeOut(tween(150))
-            ) {
-                PlayerScreen(
-                    controller = controller,
-                    vm = vm,
-                    onMinimize = { controller.expanded = false }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun YTTopBar(avatarUrl: String?, onSearch: () -> Unit, onProfile: () -> Unit) {
-    Surface(color = MaterialTheme.colorScheme.surface) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFFFF0000)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    Icons.Filled.PlayArrow,
-                    contentDescription = null,
-                    tint = Color.White
-                )
-            }
-            Spacer(Modifier.width(8.dp))
-            Text(
-                stringResource(R.string.app_name),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(Modifier.weight(1f))
-            IconButton(onClick = onSearch) {
-                Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.search))
-            }
-            IconButton(onClick = onProfile) {
-                if (!avatarUrl.isNullOrBlank()) {
-                    AsyncImage(
-                        model = avatarUrl,
-                        contentDescription = stringResource(R.string.nav_you),
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(CircleShape)
-                    )
-                } else {
-                    Icon(Icons.Filled.Person, contentDescription = stringResource(R.string.nav_you))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun Placeholder(icon: ImageVector, @StringRes label: Int) {
-    Column(
-        Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(
-            icon,
-            contentDescription = stringResource(label),
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.outline
-        )
-        Spacer(Modifier.height(16.dp))
-        Text(stringResource(R.string.coming_soon))
-    }
-}
+    val co
