@@ -42,4 +42,10 @@
     <string name="language">Language</string>
     <string name="language_system">System default</string>
     <string name="default_resolution">Default video quality</string>
+    <string name="sign_in_google">Sign in with Google</string>
+    <string name="sign_out">Sign out</string>
+    <string name="login_subtitle">Sign in to show your Google profile in the app.</string>
+    <string name="login_not_configured">Google sign-in is not set up yet (missing client ID).</string>
+    <string name="login_no_account">No Google account found on this device.</string>
+    <string name="login_failed">Sign-in failed. Please try again.</string>
 </resources>
