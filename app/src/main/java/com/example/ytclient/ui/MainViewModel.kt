@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.ytclient.data.FeedPager
 import com.example.ytclient.data.Repository
 import com.example.ytclient.data.VideoItem
 import kotlinx.coroutines.Job
@@ -37,20 +38,19 @@ class MainViewModel : ViewModel() {
 
     private var lastFilterLabel: String? = null
 
-    init {
-        loadHome()
-    }
+    var homeLoadingMore by mutableStateOf(false)
+        private set
+    var searchLoadingMore by mutableStateOf(false)
+        private set
+    private var homePager: FeedPager? = null
+    private var homeJob: Job? = null
+    private var searchPager: FeedPager? = null
+    private var searchJob: Job? = null
 
     fun loadHome() {
         selectedFilter = 0
         lastFilterLabel = null
-        viewModelScope.launch {
-            homeState = UiState.Loading
-            homeState = runCatching { Repository.home() }.fold(
-                onSuccess = { UiState.Success(it) },
-                onFailure = { UiState.Error(it.message ?: "Gagal memuat video") }
-            )
-        }
+        startHome(Repository.homePager(), "Gagal memuat video")
     }
 
     fun selectFilter(index: Int, label: String?) {
@@ -62,12 +62,37 @@ class MainViewModel : ViewModel() {
         lastFilterLabel = label
         val q = label?.trim().orEmpty()
         if (q.isEmpty()) return
-        viewModelScope.launch {
+        startHome(Repository.searchPager(q), "Pencarian gagal")
+    }
+
+    private fun startHome(pager: FeedPager, fallbackError: String) {
+        homeJob?.cancel()
+        homeLoadingMore = false
+        homePager = pager
+        homeJob = viewModelScope.launch {
             homeState = UiState.Loading
-            homeState = runCatching { Repository.search(q) }.fold(
+            homeState = runCatching { pager.nextBatch() }.fold(
                 onSuccess = { UiState.Success(it) },
-                onFailure = { UiState.Error(it.message ?: "Pencarian gagal") }
+                onFailure = { UiState.Error(it.message ?: fallbackError) }
             )
+        }
+    }
+
+    /** Called when the home list scrolls near its end: appends the next page, forever. */
+    fun loadMoreHome() {
+        val pager = homePager ?: return
+        if (homeLoadingMore || pager.exhausted || homeState !is UiState.Success) return
+        homeLoadingMore = true
+        homeJob = viewModelScope.launch {
+            try {
+                val fresh = runCatching { pager.nextBatch() }.getOrDefault(emptyList())
+                val latest = (homeState as? UiState.Success)?.items
+                if (homePager === pager && latest != null && fresh.isNotEmpty()) {
+                    homeState = UiState.Success(latest + fresh)
+                }
+            } finally {
+                if (homePager === pager) homeLoadingMore = false
+            }
         }
     }
 
@@ -79,12 +104,33 @@ class MainViewModel : ViewModel() {
     fun runSearch() {
         val q = query.trim()
         if (q.isEmpty()) return
-        viewModelScope.launch {
+        val pager = Repository.searchPager(q)
+        searchJob?.cancel()
+        searchLoadingMore = false
+        searchPager = pager
+        searchJob = viewModelScope.launch {
             searchState = UiState.Loading
-            searchState = runCatching { Repository.search(q) }.fold(
+            searchState = runCatching { pager.nextBatch() }.fold(
                 onSuccess = { UiState.Success(it) },
                 onFailure = { UiState.Error(it.message ?: "Pencarian gagal") }
             )
+        }
+    }
+
+    fun loadMoreSearch() {
+        val pager = searchPager ?: return
+        if (searchLoadingMore || pager.exhausted || searchState !is UiState.Success) return
+        searchLoadingMore = true
+        searchJob = viewModelScope.launch {
+            try {
+                val fresh = runCatching { pager.nextBatch() }.getOrDefault(emptyList())
+                val latest = (searchState as? UiState.Success)?.items
+                if (searchPager === pager && latest != null && fresh.isNotEmpty()) {
+                    searchState = UiState.Success(latest + fresh)
+                }
+            } finally {
+                if (searchPager === pager) searchLoadingMore = false
+            }
         }
     }
 
@@ -128,5 +174,10 @@ class MainViewModel : ViewModel() {
                 onFailure = { UiState.Error(it.message ?: "Gagal memuat rekomendasi") }
             )
         }
+    }
+
+    // Must stay last: property initializers above have to run before the first load starts.
+    init {
+        loadHome()
     }
 }
