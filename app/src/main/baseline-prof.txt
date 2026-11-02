@@ -1,0 +1,12 @@
+HSPLandroidx/compose/foundation/lazy/**->*(**)**
+HSPLandroidx/compose/runtime/**->*(**)**
+HSPLandroidx/compose/ui/**->*(**)**
+HSPLandroidx/compose/material3/**->*(**)**
+HSPLcoil/**->*(**)**
+HSPLcom/example/ytclient/ui/**->*(**)**
+Landroidx/compose/foundation/lazy/**;
+Landroidx/compose/runtime/**;
+Landroidx/compose/ui/**;
+Landroidx/compose/material3/**;
+Lcoil/**;
+Lcom/example/ytclient/ui/**;
