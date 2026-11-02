@@ -42,10 +42,19 @@
     <string name="language">Bahasa</string>
     <string name="language_system">Bawaan sistem</string>
     <string name="default_resolution">Kualitas video default</string>
-    <string name="sign_in_google">Masuk dengan Google</string>
+    <string name="playback_speed">Kecepatan pemutaran</string>
+    <string name="fullscreen">Layar penuh</string>
+    <string name="login_title">Masuk dengan Google</string>
+    <string name="login_step">Di HP atau komputer, buka halaman di bawah lalu masukkan kode ini, sama seperti login YouTube di TV.</string>
+    <string name="login_open">Buka google.com/device</string>
+    <string name="login_copy">Salin kode</string>
+    <string name="login_copied">Kode disalin</string>
+    <string name="login_waiting">Menunggu kamu konfirmasi…</string>
+    <string name="login_success">Berhasil masuk!</string>
+    <string name="login_failed">Gagal masuk</string>
+    <string name="login_hint">Masuk pakai kode, seperti di YouTube TV</string>
+    <string name="sign_in">Masuk dengan Google</string>
+    <string name="sign_in_short">Masuk</string>
+    <string name="signed_in">Sudah masuk dengan Google</string>
     <string name="sign_out">Keluar</string>
-    <string name="login_subtitle">Masuk untuk menampilkan profil Google kamu di aplikasi.</string>
-    <string name="login_not_configured">Login Google belum diatur (client ID belum diisi).</string>
-    <string name="login_no_account">Tidak ada akun Google di perangkat ini.</string>
-    <string name="login_failed">Gagal masuk. Coba lagi.</string>
 </resources>
