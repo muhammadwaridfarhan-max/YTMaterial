@@ -5,7 +5,10 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
+import org.schabi.newpipe.extractor.InfoItem
+import org.schabi.newpipe.extractor.ListExtractor
 import org.schabi.newpipe.extractor.MediaFormat
+import org.schabi.newpipe.extractor.Page
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.search.SearchInfo
 import org.schabi.newpipe.extractor.stream.AudioStream
@@ -41,12 +44,112 @@ data class VideoStreams(
             .distinct().sortedDescending()
 }
 
+/**
+ * Endless feed: walks page by page through one source (kiosk / search) and, when that source
+ * runs dry, moves on to the next one so the list never hits a dead end.
+ */
+class FeedPager(private val sources: List<() -> ListExtractor<out InfoItem>>) {
+    private var index = -1
+    private var current: ListExtractor<out InfoItem>? = null
+    private var next: Page? = null
+    private var loadedAny = false
+    private val seen = HashSet<String>()
+
+    @Volatile
+    var exhausted = false
+        private set
+
+    /** Next batch of new videos; empty only when every source is used up. */
+    suspend fun nextBatch(): List<VideoItem> = withContext(Dispatchers.IO) {
+        var attempts = 0
+        while (!exhausted && attempts++ < 8) {
+            val raw = try {
+                fetch()
+            } catch (e: kotlin.coroutines.cancellation.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                current = null
+                next = null
+                if (!loadedAny && index >= sources.size - 1) throw e
+                emptyList()
+            }
+            val fresh = raw.filter { it.url != null && seen.add(it.url) }
+            if (fresh.isNotEmpty()) {
+                loadedAny = true
+                return@withContext fresh.map { it.toVideoItem() }
+            }
+        }
+        if (!loadedAny && !exhausted) throw IllegalStateException("Tidak ada video ditemukan")
+        emptyList()
+    }
+
+    private fun fetch(): List<StreamInfoItem> {
+        val ext = current
+        val cursor = next
+        val page: ListExtractor.InfoItemsPage<out InfoItem>
+        if (ext == null || cursor == null) {
+            index++
+            if (index >= sources.size) {
+                exhausted = true
+                return emptyList()
+            }
+            val e = sources[index]()
+            current = e
+            e.fetchPage()
+            page = e.initialPage
+        } else {
+            page = ext.getPage(cursor)
+        }
+        next = if (page.hasNextPage()) page.nextPage else null
+        return page.items.filterIsInstance<StreamInfoItem>()
+    }
+}
+
+internal fun StreamInfoItem.toVideoItem() = VideoItem(
+    title = name ?: "",
+    url = url ?: "",
+    channel = uploaderName ?: "",
+    channelAvatar = runCatching {
+        (uploaderAvatars.filter { it.height >= 48 }.minByOrNull { it.height }
+            ?: uploaderAvatars.maxByOrNull { it.height })?.url
+    }.getOrNull(),
+    // Mid-size thumbnail (>= 270px tall) instead of the biggest one: far lighter to decode while scrolling.
+    thumbnail = (thumbnails.filter { it.height >= 270 }.minByOrNull { it.height }
+        ?: thumbnails.maxByOrNull { it.height })?.url,
+    durationSec = duration,
+    views = viewCount,
+    uploaded = textualUploadDate,
+    isLive = streamType == StreamType.LIVE_STREAM
+)
+
 object Repository {
     private val service get() = ServiceList.YouTube
 
     private val SHORT_QUERIES = listOf(
         "#shorts", "shorts viral", "shorts lucu", "shorts musik", "shorts gaming",
         "shorts kuliner", "shorts hewan lucu", "shorts olahraga", "shorts tutorial", "shorts motivasi"
+    )
+
+    private val HOME_EXTRA = listOf(
+        "musik populer", "trending indonesia", "viral hari ini", "berita terbaru", "film pendek",
+        "game seru", "tutorial", "olahraga", "kuliner", "teknologi terbaru"
+    )
+
+    private fun searchExtractor(query: String): ListExtractor<out InfoItem> {
+        val handler = service.searchQHFactory.fromQuery(query, listOf("videos"), "")
+        return service.getSearchExtractor(handler)
+    }
+
+    /** Home feed: trending kiosk first, then topic searches, page after page. */
+    fun homePager() = FeedPager(
+        listOf<() -> ListExtractor<out InfoItem>>({ service.kioskList.defaultKioskExtractor }) +
+            HOME_EXTRA.map { q -> { searchExtractor(q) } }
+    )
+
+    /** Endless results for a query (also used by the home filter chips). */
+    fun searchPager(query: String) = FeedPager(
+        listOf(query, "$query populer", "$query terbaru", "$query hari ini", "best $query")
+            .map { q -> { searchExtractor(q) } }
     )
 
     suspend fun home(): List<VideoItem> = withContext(Dispatchers.IO) {
@@ -98,23 +201,6 @@ object Repository {
         val info = SearchInfo.getInfo(service, handler)
         return info.relatedItems.filterIsInstance<StreamInfoItem>()
     }
-
-    private fun StreamInfoItem.toVideoItem() = VideoItem(
-        title = name ?: "",
-        url = url ?: "",
-        channel = uploaderName ?: "",
-        channelAvatar = runCatching {
-            (uploaderAvatars.filter { it.height >= 48 }.minByOrNull { it.height }
-                ?: uploaderAvatars.maxByOrNull { it.height })?.url
-        }.getOrNull(),
-        // Mid-size thumbnail (>= 270px tall) instead of the biggest one: far lighter to decode while scrolling.
-        thumbnail = (thumbnails.filter { it.height >= 270 }.minByOrNull { it.height }
-            ?: thumbnails.maxByOrNull { it.height })?.url,
-        durationSec = duration,
-        views = viewCount,
-        uploaded = textualUploadDate,
-        isLive = streamType == StreamType.LIVE_STREAM
-    )
 
     /** Fetch every playable stream of a video so the player can offer quality options. */
     suspend fun resolveStreams(url: String): VideoStreams = withContext(Dispatchers.IO) {
