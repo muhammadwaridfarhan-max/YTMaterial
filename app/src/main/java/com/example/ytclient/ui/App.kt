@@ -96,4 +96,216 @@ fun App(vm: MainViewModel = viewModel()) {
     }
 
     Box(Modifier.fillMaxSize()) {
-        S
+        Scaffold(
+            topBar = {
+                YTTopBar(
+                    onSearch = { showSearch = true },
+                    onProfile = { scope.launch { pagerState.animateScrollToPage(3) } }
+                )
+            },
+            bottomBar = {
+                NavigationBar {
+                    tabs.forEachIndexed { index, tab ->
+                        val selected = pagerState.targetPage == index
+                        val iconScale by animateFloatAsState(
+                            if (selected) 1.18f else 1f,
+                            spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                            label = "navIcon"
+                        )
+                        NavigationBarItem(
+                            selected = selected,
+                            onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
+                            icon = {
+                                Icon(
+                                    tab.icon,
+                                    contentDescription = stringResource(tab.label),
+                                    modifier = Modifier.graphicsLayer {
+                                        scaleX = iconScale
+                                        scaleY = iconScale
+                                    }
+                                )
+                            },
+                            label = { Text(stringResource(tab.label)) }
+                        )
+                    }
+                }
+            }
+        ) { padding ->
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize(),
+                    beyondViewportPageCount = 1
+                ) { page ->
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                val offset = abs(
+                                    (pagerState.currentPage - page) +
+                                            pagerState.currentPageOffsetFraction
+                                ).coerceIn(0f, 1f)
+                                alpha = 1f - 0.4f * offset
+                                val s = 1f - 0.06f * offset
+                                scaleX = s
+                                scaleY = s
+                            }
+                    ) {
+                        when (page) {
+                            0 -> HomeScreen(vm, onPlay = controller::open)
+                            1 -> Placeholder(Icons.Filled.PlayArrow, R.string.nav_shorts)
+                            2 -> Placeholder(Icons.Filled.List, R.string.nav_subs)
+                            else -> YouScreen(onSignIn = { showLogin = true })
+                        }
+                    }
+                }
+                MiniPlayer(
+                    controller = controller,
+                    onExpand = { controller.expanded = true },
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                )
+            }
+        }
+
+        AnimatedVisibility(
+            visible = showSearch,
+            enter = fadeIn(tween(220)) + slideInHorizontally(tween(320)) { it / 6 },
+            exit = fadeOut(tween(200)) + slideOutHorizontally(tween(260)) { it / 6 }
+        ) {
+            SearchOverlay(
+                vm = vm,
+                onClose = { showSearch = false },
+                onPlay = controller::open
+            )
+        }
+
+        AnimatedVisibility(
+            visible = controller.current != null && controller.expanded,
+            enter = slideInVertically(spring(stiffness = Spring.StiffnessMediumLow)) { it } +
+                    fadeIn(tween(200)),
+            exit = slideOutVertically(tween(260)) { it } + fadeOut(tween(220))
+        ) {
+            PlayerScreen(
+                controller = controller,
+                vm = vm,
+                onMinimize = { controller.expanded = false },
+                onLoginRequest = { showLogin = true }
+            )
+        }
+
+        if (showLogin) {
+            LoginSheet(onDismiss = { showLogin = false })
+        }
+    }
+}
+
+@Composable
+private fun SearchOverlay(
+    vm: MainViewModel,
+    onClose: () -> Unit,
+    onPlay: (VideoItem) -> Unit
+) {
+    var backProgress by remember { mutableFloatStateOf(0f) }
+    val animated by animateFloatAsState(
+        backProgress,
+        spring(stiffness = Spring.StiffnessHigh),
+        label = "searchBack"
+    )
+    PredictiveBackHandler { progress ->
+        try {
+            progress.collect { backProgress = it.progress }
+            onClose()
+        } catch (e: CancellationException) {
+            backProgress = 0f
+        }
+    }
+    Surface(
+        Modifier
+            .fillMaxSize()
+            .graphicsLayer {
+                transformOrigin = TransformOrigin(1f, 0.5f)
+                val s = 1f - 0.1f * animated
+                scaleX = s
+                scaleY = s
+                translationX = size.width * 0.03f * animated
+                shape = RoundedCornerShape((28f * animated).dp)
+                clip = animated > 0.001f
+            },
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .imePadding()
+        ) {
+            SearchScreen(vm, onBack = onClose, onPlay = onPlay)
+        }
+    }
+}
+
+@Composable
+private fun YTTopBar(onSearch: () -> Unit, onProfile: () -> Unit) {
+    Surface(color = MaterialTheme.colorScheme.surface) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xFFFF0000)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Filled.PlayArrow,
+                    contentDescription = null,
+                    tint = Color.White
+                )
+            }
+            Spacer(Modifier.width(8.dp))
+            Text(
+                stringResource(R.string.app_name),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(Modifier.weight(1f))
+            IconButton(onClick = onSearch) {
+                Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.search))
+            }
+            IconButton(onClick = onProfile) {
+                Icon(Icons.Filled.Person, contentDescription = stringResource(R.string.nav_you))
+            }
+        }
+    }
+}
+
+@Composable
+private fun Placeholder(icon: ImageVector, @StringRes label: Int) {
+    Column(
+        Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.outline
+        )
+        Spacer(Modifier.height(16.dp))
+        Text(stringResource(label), style = MaterialTheme.typography.titleMedium)
+        Text(
+            stringResource(R.string.coming_soon),
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
