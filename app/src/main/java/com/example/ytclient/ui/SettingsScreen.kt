@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Hd
@@ -52,6 +53,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.ytclient.R
+import com.example.ytclient.auth.AuthManager
 import com.example.ytclient.settings.AppLanguage
 import com.example.ytclient.settings.AppSettings
 import com.example.ytclient.settings.ColorSource
@@ -64,22 +66,63 @@ import kotlinx.coroutines.launch
 private enum class SettingsDialog { THEME, COLOR, LANGUAGE, RESOLUTION }
 
 @Composable
-fun YouScreen(
-    topPadding: androidx.compose.ui.unit.Dp = 0.dp,
-    bottomPadding: androidx.compose.ui.unit.Dp = 0.dp
-) {
+fun YouScreen(onSignIn: () -> Unit = {}) {
     val scope = rememberCoroutineScope()
     val settings by SettingsManager.settings.collectAsState(initial = AppSettings())
     var dialog by remember { mutableStateOf<SettingsDialog?>(null) }
 
     LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(
-            start = 16.dp, end = 16.dp, top = 16.dp + topPadding, bottom = 16.dp + bottomPadding
-        )
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
     ) {
         item {
-            AccountCard()
+            Text(
+                stringResource(R.string.nav_you),
+                style = MaterialTheme.typography.headlineSmall
+            )
+            Spacer(Modifier.height(12.dp))
+            val signedIn by AuthManager.signedIn.collectAsState(initial = false)
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Filled.AccountCircle,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(40.dp)
+                    )
+                    Column(
+                        Modifier
+                            .weight(1f)
+                            .padding(horizontal = 12.dp)
+                    ) {
+                        Text(
+                            stringResource(if (signedIn) R.string.signed_in else R.string.sign_in),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Text(
+                            stringResource(R.string.login_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                        )
+                    }
+                    if (signedIn) {
+                        TextButton(onClick = { scope.launch { AuthManager.signOut() } }) {
+                            Text(stringResource(R.string.sign_out))
+                        }
+                    } else {
+                        Button(onClick = onSignIn) { Text(stringResource(R.string.sign_in_short)) }
+                    }
+                }
+            }
             Spacer(Modifier.height(16.dp))
         }
         item {
