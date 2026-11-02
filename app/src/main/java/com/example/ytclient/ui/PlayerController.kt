@@ -2,6 +2,7 @@ package com.example.ytclient.ui
 
 import android.content.Context
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -53,6 +54,24 @@ class PlayerController(context: Context) {
 
     var expanded by mutableStateOf(false)
 
+    var isFullscreen by mutableStateOf(false)
+
+    /** Playback speed, 1f = normal. */
+    var speed by mutableFloatStateOf(1f)
+        private set
+
+    fun setSpeed(value: Float) {
+        speed = value
+        player.setPlaybackSpeed(value)
+    }
+
+    fun seekTo(positionMs: Long) = player.seekTo(positionMs.coerceAtLeast(0L))
+
+    fun seekBy(deltaMs: Long) {
+        val dur = player.duration.takeIf { it > 0 } ?: Long.MAX_VALUE
+        player.seekTo((player.currentPosition + deltaMs).coerceIn(0L, dur))
+    }
+
     init {
         player.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -100,6 +119,7 @@ class PlayerController(context: Context) {
         streams = null
         error = null
         expanded = false
+        isFullscreen = false
     }
 
     fun release() {
