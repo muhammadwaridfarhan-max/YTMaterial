@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="login_subtitle">Sign in to sync your subscriptions</string>
+    <string name="login_not_configured">Google sign-in is not configured yet</string>
+    <string name="login_no_account">No Google account found on this device</string>
+    <string name="sign_in_google">Sign in with Google</string>
     <string name="app_name">YTMaterial</string>
     <string name="nav_home">Home</string>
     <string name="nav_shorts">Shorts</string>
