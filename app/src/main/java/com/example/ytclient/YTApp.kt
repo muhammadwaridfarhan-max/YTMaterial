@@ -8,7 +8,6 @@ import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
-import com.example.ytclient.auth.AccountManager
 import com.example.ytclient.data.AppDownloader
 import com.example.ytclient.settings.AppLanguage
 import com.example.ytclient.settings.SettingsManager
@@ -20,22 +19,23 @@ import org.schabi.newpipe.extractor.localization.Localization
 import java.util.Locale
 
 class YTApp : Application(), ImageLoaderFactory {
+
     override fun newImageLoader(): ImageLoader = ImageLoader.Builder(this)
-        .crossfade(150)
         .memoryCache { MemoryCache.Builder(this).maxSizePercent(0.25).build() }
         .diskCache {
             DiskCache.Builder()
-                .directory(cacheDir.resolve("thumbs"))
-                .maxSizePercent(0.02)
+                .directory(cacheDir.resolve("img"))
+                .maxSizeBytes(150L * 1024 * 1024)
                 .build()
         }
+        .crossfade(false)
+        .allowRgb565(true)
         .respectCacheHeaders(false)
         .build()
 
     override fun onCreate() {
         super.onCreate()
         SettingsManager.init(this)
-        AccountManager.init(this)
         val language = runBlocking { SettingsManager.settings.first() }.language
         applyLanguage(this, language)
     }
