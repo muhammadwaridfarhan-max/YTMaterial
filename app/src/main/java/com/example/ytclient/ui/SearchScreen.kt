@@ -101,8 +101,14 @@ fun SearchScreen(
                 )
             }
         } else {
-            VideoList(state, onRetry = vm::runSearch, onPlay = onPlay, bottomPadding = bottomPadding)
-            VideoList(state, onRetry = vm::runSearch, onPlay = onPlay, bottomPadding = bottomPadding)
+            VideoList(
+                state,
+                onRetry = vm::runSearch,
+                onPlay = onPlay,
+                bottomPadding = bottomPadding,
+                onLoadMore = vm::loadMoreSearch,
+                loadingMore = vm.searchLoadingMore
+            )
         }
     }
 }
