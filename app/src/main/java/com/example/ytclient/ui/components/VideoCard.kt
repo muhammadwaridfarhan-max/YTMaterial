@@ -31,6 +31,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import androidx.compose.ui.platform.LocalContext
 import com.example.ytclient.R
 import com.example.ytclient.data.VideoItem
 import com.example.ytclient.ui.pressScale
@@ -48,8 +50,13 @@ fun VideoCard(item: VideoItem, onClick: () -> Unit, modifier: Modifier = Modifie
         interactionSource = interaction
     ) {
         Box {
+            val context = LocalContext.current
+            // Decode at the size it is shown (not the full-size source): much smoother scrolling.
+            val thumbRequest = remember(item.thumbnail) {
+                ImageRequest.Builder(context).data(item.thumbnail).size(640, 360).build()
+            }
             AsyncImage(
-                model = item.thumbnail,
+                model = thumbRequest,
                 contentDescription = item.title,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
@@ -128,8 +135,12 @@ private fun ChannelAvatar(url: String?, name: String) {
         contentAlignment = Alignment.Center
     ) {
         if (!url.isNullOrBlank()) {
+            val context = LocalContext.current
+            val request = remember(url) {
+                ImageRequest.Builder(context).data(url).size(96, 96).build()
+            }
             AsyncImage(
-                model = url,
+                model = request,
                 contentDescription = name,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
