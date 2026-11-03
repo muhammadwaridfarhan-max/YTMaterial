@@ -18,6 +18,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -102,6 +103,7 @@ import com.example.ytclient.ui.components.VideoCard
 import com.example.ytclient.ui.components.WavySeekBar
 import com.example.ytclient.ui.components.formatViews
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 
 private val YouRed = Color(0xFFFF2D3C)
