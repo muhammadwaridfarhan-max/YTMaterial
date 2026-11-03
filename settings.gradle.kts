@@ -13,5 +13,5 @@ dependencyResolutionManagement {
         maven("https://jitpack.io")
     }
 }
-rootProject.name = "YTClient"
+rootProject.name = "YTMaterial"
 include(":app")
