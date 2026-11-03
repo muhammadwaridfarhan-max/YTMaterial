@@ -42,6 +42,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -481,8 +482,8 @@ private fun ResolutionDialog(
 
 @Composable
 private fun BlurDialog(
-    current: androidx.compose.ui.unit.Dp,
-    onSelect: (androidx.compose.ui.unit.Dp) -> Unit,
+    current: Dp,
+    onSelect: (Dp) -> Unit,
     onDismiss: () -> Unit
 ) {
     var value by remember { mutableFloatStateOf(current.value) }

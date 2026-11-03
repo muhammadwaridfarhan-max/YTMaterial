@@ -31,7 +31,7 @@ import com.example.ytclient.data.VideoItem
 @Composable
 fun HomeScreen(vm: MainViewModel, onPlay: (VideoItem) -> Unit) {
     val filters = stringArrayResource(R.array.home_filters)
-    val pullToRefreshState = rememberPullToRefreshState(vm.homeRefreshing, { vm.refreshHome() })
+    val pullToRefreshState = rememberPullToRefreshState()
     PullToRefreshBox(
         isRefreshing = vm.homeRefreshing,
         onRefresh = { vm.refreshHome() },

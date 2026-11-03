@@ -46,7 +46,7 @@ fun SearchScreen(
 ) {
     val focusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
-    val pullToRefreshState = rememberPullToRefreshState(vm.searchRefreshing, { vm.refreshSearch() })
+    val pullToRefreshState = rememberPullToRefreshState()
 
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()

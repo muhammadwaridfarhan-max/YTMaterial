@@ -73,6 +73,7 @@ import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.abs
+import androidx.compose.runtime.collectAsState
 
 @Composable
 fun App(vm: MainViewModel = viewModel()) {
@@ -334,4 +335,3 @@ private fun Placeholder(icon: ImageVector, @StringRes label: Int) {
     }
 }
 
-data class NavTab(@StringRes val label: Int, val icon: ImageVector)
