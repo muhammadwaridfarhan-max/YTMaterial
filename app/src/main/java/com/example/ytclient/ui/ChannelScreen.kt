@@ -50,7 +50,7 @@ fun ChannelScreen(
         ) {
             IconButton(onClick = onBack) {
                 Icon(
-                    ArrowBack,
+                    Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = stringResource(R.string.close)
                 )
             }
