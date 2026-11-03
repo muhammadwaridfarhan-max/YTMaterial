@@ -127,6 +127,7 @@ private fun NavPill(
             )
             .semantics { }
             .padding(horizontal = if (selected) 18.dp else 14.dp)
+        ),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
