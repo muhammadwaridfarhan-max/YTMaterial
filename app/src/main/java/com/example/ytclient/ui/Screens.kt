@@ -118,7 +118,7 @@ private fun Placeholder(
     header: (@Composable () -> Unit)?,
     content: @Composable () -> Unit
 ) {
-    Column(modifier.fillMaxSize().padding(horizontal = 12.dp, top = topPadding + 4.dp)) {
+    Column(modifier.fillMaxSize().padding(PaddingValues(horizontal = 12.dp, top = topPadding + 4.dp))) {
         if (header != null) {
             Box(Modifier.padding(vertical = 8.dp)) { header() }
         }
