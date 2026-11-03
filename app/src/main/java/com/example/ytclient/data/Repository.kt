@@ -5,6 +5,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.schabi.newpipe.extractor.InfoItem
 import org.schabi.newpipe.extractor.ListExtractor
 import org.schabi.newpipe.extractor.MediaFormat
@@ -17,6 +19,12 @@ import org.schabi.newpipe.extractor.stream.StreamInfo
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.extractor.stream.StreamType
 import org.schabi.newpipe.extractor.stream.VideoStream
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import java.util.concurrent.TimeUnit
+import android.content.Context
+import android.os.Environment
 
 data class VideoItem(
     val title: String,
@@ -229,5 +237,30 @@ object Repository {
             videoOnly = videoOnly,
             progressive = progressive
         )
+    }
+
+    fun sanitizeFilename(name: String): String =
+        name.replace(Regex("[^A-Za-z0-9 _-]"), "").take(80).trim()
+
+    suspend fun downloadVideo(context: Context, url: String, title: String): Result<File> = withContext(Dispatchers.IO) {
+        runCatching {
+            val client = OkHttpClient.Builder()
+                .readTimeout(60, TimeUnit.SECONDS)
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .build()
+            val request = Request.Builder().url(url).build()
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
+                val dir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+                    ?: throw IOException("Storage unavailable")
+                val file = File(dir, "${sanitizeFilename(title)}.mp4")
+                response.body?.byteStream()?.use { input ->
+                    FileOutputStream(file).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                file
+            }
+        }
     }
 }

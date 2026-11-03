@@ -42,10 +42,20 @@ class MainViewModel : ViewModel() {
         private set
     var searchLoadingMore by mutableStateOf(false)
         private set
+    var homeRefreshing by mutableStateOf(false)
+        private set
+    var searchRefreshing by mutableStateOf(false)
+        private set
     private var homePager: FeedPager? = null
     private var homeJob: Job? = null
     private var searchPager: FeedPager? = null
     private var searchJob: Job? = null
+    var channelState by mutableStateOf<UiState?>(null)
+        private set
+    var channelLoadingMore by mutableStateOf(false)
+        private set
+    private var channelPager: FeedPager? = null
+    private var channelJob: Job? = null
 
     fun loadHome() {
         selectedFilter = 0
@@ -98,7 +108,76 @@ class MainViewModel : ViewModel() {
 
     fun retryFilter() {
         val label = lastFilterLabel
-        if (selectedFilter == 0 || label == null) loadHome() else selectFilter(selectedFilter, label)
+        if (selectedFilter == 0 || label == null) refreshHome() else refreshSearch()
+    }
+
+    fun refreshHome() {
+        homeJob?.cancel()
+        homeLoadingMore = false
+        homeRefreshing = true
+        val pager = if (selectedFilter == 0) Repository.homePager() else {
+            val q = lastFilterLabel?.trim().orEmpty()
+            if (q.isEmpty()) Repository.homePager() else Repository.searchPager(q)
+        }
+        homePager = pager
+        homeJob = viewModelScope.launch {
+            homeState = runCatching { pager.nextBatch() }.fold(
+                onSuccess = { UiState.Success(it) },
+                onFailure = { UiState.Error(it.message ?: "Gagal memuat video") }
+            )
+            homeRefreshing = false
+        }
+    }
+
+    fun refreshSearch() {
+        searchJob?.cancel()
+        searchLoadingMore = false
+        searchRefreshing = true
+        val q = query.trim()
+        if (q.isEmpty()) {
+            searchRefreshing = false
+            return
+        }
+        val pager = Repository.searchPager(q)
+        searchPager = pager
+        searchJob = viewModelScope.launch {
+            searchState = runCatching { pager.nextBatch() }.fold(
+                onSuccess = { UiState.Success(it) },
+                onFailure = { UiState.Error(it.message ?: "Pencarian gagal") }
+            )
+            searchRefreshing = false
+        }
+    }
+
+    fun loadChannel(name: String) {
+        channelJob?.cancel()
+        channelLoadingMore = false
+        channelState = UiState.Loading
+        val pager = Repository.searchPager(name)
+        channelPager = pager
+        channelJob = viewModelScope.launch {
+            channelState = runCatching { pager.nextBatch() }.fold(
+                onSuccess = { UiState.Success(it) },
+                onFailure = { UiState.Error(it.message ?: "Gagal memuat channel") }
+            )
+        }
+    }
+
+    fun loadMoreChannel() {
+        val pager = channelPager ?: return
+        if (channelLoadingMore || pager.exhausted || channelState !is UiState.Success) return
+        channelLoadingMore = true
+        channelJob = viewModelScope.launch {
+            try {
+                val fresh = runCatching { pager.nextBatch() }.getOrDefault(emptyList())
+                val latest = (channelState as? UiState.Success)?.items
+                if (channelPager === pager && latest != null && fresh.isNotEmpty()) {
+                    channelState = UiState.Success(latest + fresh)
+                }
+            } finally {
+                if (channelPager === pager) channelLoadingMore = false
+            }
+        }
     }
 
     fun runSearch() {

@@ -60,6 +60,7 @@ import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
+import android.widget.Toast
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -116,12 +117,15 @@ fun PlayerScreen(
     controller: PlayerController,
     vm: MainViewModel,
     onMinimize: () -> Unit,
-    onLoginRequest: () -> Unit = {}
+    onLoginRequest: () -> Unit = {},
+    onChannelClick: (String) -> Unit = {}
 ) {
     val item = controller.current ?: return
     val context = LocalContext.current
     var showQualitySheet by remember { mutableStateOf(false) }
     var showSpeedSheet by remember { mutableStateOf(false) }
+    var showDownloadSheet by remember { mutableStateOf(false) }
+    var downloadMessage by remember { mutableStateOf<String?>(null) }
     val fullscreen = controller.isFullscreen
 
     var backProgress by remember { mutableFloatStateOf(0f) }
@@ -231,36 +235,43 @@ fun PlayerScreen(
                             Text(item.title, style = MaterialTheme.typography.titleMedium)
                             Spacer(Modifier.height(12.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    Modifier
-                                        .size(40.dp)
-                                        .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-                                    contentAlignment = Alignment.Center
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable { onChannelClick(item.channel) }
                                 ) {
-                                    if (!item.channelAvatar.isNullOrBlank()) {
-                                        AsyncImage(
-                                            model = item.channelAvatar,
-                                            contentDescription = item.channel,
-                                            contentScale = ContentScale.Crop,
-                                            modifier = Modifier.fillMaxSize()
-                                        )
+                                    Box(
+                                        Modifier
+                                            .size(40.dp)
+                                            .clip(CircleShape)
+                                            .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (!item.channelAvatar.isNullOrBlank()) {
+                                            AsyncImage(
+                                                model = item.channelAvatar,
+                                                contentDescription = item.channel,
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier.fillMaxSize()
+                                            )
+                                        }
                                     }
-                                }
-                                Spacer(Modifier.width(12.dp))
-                                Column(Modifier.weight(1f)) {
-                                    Text(
-                                        item.channel,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    formatViews(item.views)?.let {
+                                    Spacer(Modifier.width(12.dp))
+                                    Column(Modifier.weight(1f)) {
                                         Text(
-                                            it,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            item.channel,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
+                                        formatViews(item.views)?.let {
+                                            Text(
+                                                it,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
                                     }
                                 }
                                 Button(
@@ -290,7 +301,7 @@ fun PlayerScreen(
                                     leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) }
                                 )
                                 AssistChip(
-                                    onClick = { },
+                                    onClick = { showDownloadSheet = true },
                                     label = { Text(stringResource(R.string.download)) },
                                     leadingIcon = { Icon(Icons.Filled.Download, contentDescription = null) }
                                 )
@@ -336,6 +347,7 @@ fun PlayerScreen(
                             VideoCard(
                                 video,
                                 onClick = { controller.open(video) },
+                                onChannelClick = { },
                                 modifier = Modifier.animateItem()
                             )
                         }
@@ -386,6 +398,60 @@ fun PlayerScreen(
                     }
                 }
             }
+        }
+    }
+
+    if (showDownloadSheet) {
+        val streams = controller.streams
+        ModalBottomSheet(onDismissRequest = { showDownloadSheet = false }) {
+            Column(Modifier.padding(bottom = 32.dp)) {
+                SheetTitle(stringResource(R.string.download))
+                if (streams == null || item.url.isBlank()) {
+                    Text(
+                        stringResource(R.string.err_no_stream),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(horizontal = 24.dp)
+                    )
+                } else {
+                    val options = buildList {
+                        add(Triple(-1, stringResource(R.string.quality_auto), null))
+                        val seen = mutableSetOf<Int>()
+                        (streams.progressive + streams.videoOnly)
+                            .sortedByDescending { it.height }
+                            .forEach { track ->
+                                if (seen.add(track.height)) {
+                                    add(Triple(track.height, "${track.height}p", track))
+                                }
+                            }
+                    }
+                    val scope = rememberCoroutineScope()
+                    options.forEach { (h, label, track) ->
+                        OptionRow(label = label, selected = false) {
+                            val url = if (h == -1) {
+                                streams.progressive.firstOrNull()?.url
+                                    ?: streams.videoOnly.firstOrNull()?.url
+                            } else {
+                                track?.url
+                            }
+                            if (url != null) {
+                                scope.launch {
+                                    val result = Repository.downloadVideo(context, url, item.title)
+                                    downloadMessage = result.exceptionOrNull()?.message
+                                        ?: context.getString(R.string.download_complete)
+                                    showDownloadSheet = false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    downloadMessage?.let { msg ->
+        LaunchedEffect(msg) {
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            downloadMessage = null
         }
     }
 }

@@ -78,7 +78,7 @@ fun VideoList(
                     item(key = "header", contentType = "header") { header() }
                 }
                 items(state.items, key = { it.url }, contentType = { "video" }) { video ->
-                    VideoCard(video, onClick = { onPlay(video) })
+                    VideoCard(video, onClick = { onPlay(video) }, onChannelClick = { })
                 }
                 if (loadingMore) {
                     item(key = "loading-more", contentType = "loading") {

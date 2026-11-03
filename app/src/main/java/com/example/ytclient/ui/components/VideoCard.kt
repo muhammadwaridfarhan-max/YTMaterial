@@ -38,7 +38,7 @@ import com.example.ytclient.data.VideoItem
 import com.example.ytclient.ui.pressScale
 
 @Composable
-fun VideoCard(item: VideoItem, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun VideoCard(item: VideoItem, onClick: () -> Unit, onChannelClick: (String) -> Unit = {}, modifier: Modifier = Modifier) {
     val interaction = remember { MutableInteractionSource() }
     Card(
         onClick = onClick,
@@ -99,7 +99,11 @@ fun VideoCard(item: VideoItem, onClick: () -> Unit, modifier: Modifier = Modifie
         Row(Modifier.padding(12.dp)) {
             ChannelAvatar(item.channelAvatar, item.channel)
             Spacer(Modifier.width(12.dp))
-            Column {
+            Column(
+                Modifier
+                    .weight(1f)
+                    .clickable { onChannelClick(item.channel) }
+            ) {
                 Text(
                     item.title,
                     style = MaterialTheme.typography.titleMedium,

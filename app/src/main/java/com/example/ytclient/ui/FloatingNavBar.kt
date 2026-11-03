@@ -39,6 +39,8 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
 
 data class NavTab(@StringRes val label: Int, val icon: ImageVector)
@@ -53,9 +55,10 @@ fun FloatingNavBar(
     selected: Int,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    hazeState: HazeState? = null
+    hazeState: HazeState? = null,
+    blurStrength: Dp = 20.dp
 ) {
-    Box(modifier = modifier.glass(hazeState, CircleShape)) {
+    Box(modifier = modifier.glass(hazeState, CircleShape, blurStrength = blurStrength)) {
         Row(
             modifier = Modifier.padding(6.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -73,25 +76,23 @@ private fun NavPill(tab: NavTab, selected: Boolean, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     val interaction = remember { MutableInteractionSource() }
     val iconScale by animateFloatAsState(
-        targetValue = if (selected) 1.15f else 1f,
-        animationSpec = PopSpring,
+        targetValue = if (selected) 1.1f else 1f,
+        animationSpec = SoftSpring,
         label = "pillIcon"
     )
     val container by animateColorAsState(
         targetValue = if (selected) scheme.primaryContainer else Color.Transparent,
-        animationSpec = tween(250),
+        animationSpec = tween(180),
         label = "pillContainer"
     )
     val content by animateColorAsState(
         targetValue = if (selected) scheme.onPrimaryContainer else scheme.onSurfaceVariant,
-        animationSpec = tween(250),
+        animationSpec = tween(180),
         label = "pillContent"
     )
     Row(
         modifier = Modifier
-            .animateContentSize(
-                spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow)
-            )
+            .animateContentSize(tween(180))
             .height(48.dp)
             .pressScale(interaction, 0.9f)
             .clip(CircleShape)

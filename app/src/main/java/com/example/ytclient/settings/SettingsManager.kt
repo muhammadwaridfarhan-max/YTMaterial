@@ -9,6 +9,8 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
@@ -39,7 +41,8 @@ data class AppSettings(
     val colorSource: ColorSource = ColorSource.DYNAMIC,
     val seedColor: Int = DEFAULT_SEED,
     val language: AppLanguage = AppLanguage.SYSTEM,
-    val resolution: Resolution = Resolution.AUTO
+    val resolution: Resolution = Resolution.AUTO,
+    val blurStrength: Dp = 20.dp
 ) {
     companion object {
         const val DEFAULT_SEED: Int = 0xFFD93025.toInt() // YouTube red
@@ -54,6 +57,7 @@ object SettingsManager {
     private val KEY_SEED = intPreferencesKey("seed_color")
     private val KEY_LANGUAGE = stringPreferencesKey("language")
     private val KEY_RESOLUTION = stringPreferencesKey("resolution")
+    private val KEY_BLUR = intPreferencesKey("blur_strength")
 
     private lateinit var store: DataStore<Preferences>
 
@@ -73,7 +77,8 @@ object SettingsManager {
                 language = AppLanguage.fromTag(p[KEY_LANGUAGE]),
                 resolution = p[KEY_RESOLUTION]?.let {
                     runCatching { Resolution.valueOf(it) }.getOrNull()
-                } ?: Resolution.AUTO
+                } ?: Resolution.AUTO,
+                blurStrength = p[KEY_BLUR]?.dp ?: 20.dp
             )
         }
     }
@@ -96,5 +101,9 @@ object SettingsManager {
 
     suspend fun setResolution(resolution: Resolution) {
         store.edit { it[KEY_RESOLUTION] = resolution.name }
+    }
+
+    suspend fun setBlurStrength(strength: Dp) {
+        store.edit { it[KEY_BLUR] = strength.value.toInt() }
     }
 }

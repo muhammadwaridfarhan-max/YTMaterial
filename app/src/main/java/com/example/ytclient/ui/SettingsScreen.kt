@@ -35,6 +35,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -63,7 +64,7 @@ import com.example.ytclient.settings.ThemeMode
 import com.example.ytclient.ui.theme.SeedColorSwatches
 import kotlinx.coroutines.launch
 
-private enum class SettingsDialog { THEME, COLOR, LANGUAGE, RESOLUTION }
+private enum class SettingsDialog { THEME, COLOR, LANGUAGE, RESOLUTION, BLUR }
 
 @Composable
 fun YouScreen(onSignIn: () -> Unit = {}) {
@@ -153,6 +154,13 @@ fun YouScreen(onSignIn: () -> Unit = {}) {
                 value = resolutionLabel(settings.resolution)
             ) { dialog = SettingsDialog.RESOLUTION }
         }
+        item {
+            SettingsItem(
+                icon = Icons.Filled.DarkMode,
+                title = stringResource(R.string.blur_strength),
+                value = if (settings.blurStrength.value <= 12) stringResource(R.string.blur_light) else stringResource(R.string.blur_heavy)
+            ) { dialog = SettingsDialog.BLUR }
+        }
     }
 
     when (dialog) {
@@ -182,6 +190,15 @@ fun YouScreen(onSignIn: () -> Unit = {}) {
             current = settings.resolution,
             onSelect = {
                 scope.launch { SettingsManager.setResolution(it) }
+                dialog = null
+            },
+            onDismiss = { dialog = null }
+        )
+
+        SettingsDialog.BLUR -> BlurDialog(
+            current = settings.blurStrength,
+            onSelect = {
+                scope.launch { SettingsManager.setBlurStrength(it) }
                 dialog = null
             },
             onDismiss = { dialog = null }
@@ -454,6 +471,39 @@ private fun ResolutionDialog(
                         Text(resolutionLabel(res), style = MaterialTheme.typography.bodyLarge)
                     }
                 }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        }
+    )
+}
+
+@Composable
+private fun BlurDialog(
+    current: androidx.compose.ui.unit.Dp,
+    onSelect: (androidx.compose.ui.unit.Dp) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var value by remember { mutableFloatStateOf(current.value) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.blur_strength)) },
+        text = {
+            Column {
+                Text(
+                    text = if (value <= 12) stringResource(R.string.blur_light) else stringResource(R.string.blur_heavy),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(12.dp))
+                Slider(
+                    value = value,
+                    onValueChange = { value = it },
+                    valueRange = 4f..40f,
+                    steps = 18,
+                    onValueChangeFinished = { onSelect(value.dp) }
+                )
             }
         },
         confirmButton = {

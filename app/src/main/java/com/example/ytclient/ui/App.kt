@@ -1,9 +1,11 @@
 package com.example.ytclient.ui
 
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -37,11 +39,10 @@ import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -68,6 +69,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ytclient.R
 import com.example.ytclient.data.VideoItem
+import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.abs
@@ -76,8 +78,12 @@ import kotlin.math.abs
 fun App(vm: MainViewModel = viewModel()) {
     val context = LocalContext.current
     val controller = remember { PlayerController(context.applicationContext) }
+    val shorts = remember { ShortsPlayer(context.applicationContext) }
     DisposableEffect(Unit) {
-        onDispose { controller.release() }
+        onDispose {
+            controller.release()
+            shorts.release()
+        }
     }
 
     val tabs = listOf(
@@ -88,8 +94,12 @@ fun App(vm: MainViewModel = viewModel()) {
     )
     val scope = rememberCoroutineScope()
     val pagerState = rememberPagerState(pageCount = { tabs.size })
+    val hazeState = remember { HazeState() }
     var showSearch by rememberSaveable { mutableStateOf(false) }
     var showLogin by rememberSaveable { mutableStateOf(false) }
+    var showChannel by remember { mutableStateOf(false) }
+    var currentChannel by remember { mutableStateOf<String?>(null) }
+    val settings by com.example.ytclient.settings.SettingsManager.settings.collectAsState(initial = com.example.ytclient.settings.AppSettings())
 
     BackHandler(enabled = pagerState.currentPage != 0) {
         scope.launch { pagerState.animateScrollToPage(0) }
@@ -104,31 +114,13 @@ fun App(vm: MainViewModel = viewModel()) {
                 )
             },
             bottomBar = {
-                NavigationBar {
-                    tabs.forEachIndexed { index, tab ->
-                        val selected = pagerState.targetPage == index
-                        val iconScale by animateFloatAsState(
-                            if (selected) 1.18f else 1f,
-                            spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-                            label = "navIcon"
-                        )
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
-                            icon = {
-                                Icon(
-                                    tab.icon,
-                                    contentDescription = stringResource(tab.label),
-                                    modifier = Modifier.graphicsLayer {
-                                        scaleX = iconScale
-                                        scaleY = iconScale
-                                    }
-                                )
-                            },
-                            label = { Text(stringResource(tab.label)) }
-                        )
-                    }
-                }
+                FloatingNavBar(
+                    tabs = tabs,
+                    selected = pagerState.currentPage,
+                    onSelect = { scope.launch { pagerState.animateScrollToPage(it) } },
+                    hazeState = hazeState,
+                    blurStrength = settings.blurStrength
+                )
             }
         ) { padding ->
             Box(
@@ -157,7 +149,7 @@ fun App(vm: MainViewModel = viewModel()) {
                     ) {
                         when (page) {
                             0 -> HomeScreen(vm, onPlay = controller::open)
-                            1 -> Placeholder(Icons.Filled.PlayArrow, R.string.nav_shorts)
+                            1 -> ShortsScreen(vm = vm, shorts = shorts, mainPlayer = controller, onSearch = { showSearch = true }, bottomPadding = 0.dp)
                             2 -> Placeholder(Icons.Filled.List, R.string.nav_subs)
                             else -> YouScreen(onSignIn = { showLogin = true })
                         }
@@ -193,13 +185,45 @@ fun App(vm: MainViewModel = viewModel()) {
                 controller = controller,
                 vm = vm,
                 onMinimize = { controller.expanded = false },
-                onLoginRequest = { showLogin = true }
+                onLoginRequest = { showLogin = true },
+                onChannelClick = {
+                    currentChannel = it
+                    showChannel = true
+                }
+            )
+        }
+
+        if (showChannel && currentChannel != null) {
+            ChannelOverlay(
+                channel = currentChannel,
+                vm = vm,
+                onClose = {
+                    showChannel = false
+                    currentChannel = null
+                },
+                onPlay = controller::open
             )
         }
 
         if (showLogin) {
             LoginSheet(onDismiss = { showLogin = false })
         }
+    }
+}
+
+@Composable
+private fun ChannelOverlay(
+    channel: String?,
+    vm: MainViewModel,
+    onClose: () -> Unit,
+    onPlay: (VideoItem) -> Unit
+) {
+    BackHandler { onClose() }
+    Surface(
+        Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        ChannelScreen(channel = channel ?: "", vm = vm, onBack = onClose, onPlay = onPlay)
     }
 }
 
@@ -309,3 +333,5 @@ private fun Placeholder(icon: ImageVector, @StringRes label: Int) {
         )
     }
 }
+
+data class NavTab(@StringRes val label: Int, val icon: ImageVector)

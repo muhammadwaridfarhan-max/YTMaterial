@@ -13,8 +13,14 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PullRefreshIndicator
+import androidx.compose.material3.PullRefreshState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberPullRefreshState
+import androidx.compose.material3.pullRefresh
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -41,74 +47,78 @@ fun SearchScreen(
 ) {
     val focusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
+    val pullRefreshState = rememberPullRefreshState(vm.searchRefreshing, { vm.refreshSearch() })
 
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
         keyboard?.show()
     }
 
-    Column(Modifier.fillMaxSize()) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.close)
+    Box(Modifier.pullRefresh(pullRefreshState)) {
+        Column(Modifier.fillMaxSize()) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.close)
+                    )
+                }
+                TextField(
+                    value = vm.query,
+                    onValueChange = { vm.query = it },
+                    modifier = Modifier
+                        .weight(1f)
+                        .focusRequester(focusRequester),
+                    placeholder = { Text(stringResource(R.string.search_hint)) },
+                    singleLine = true,
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedIndicatorColor = MaterialTheme.colorScheme.surface,
+                        unfocusedIndicatorColor = MaterialTheme.colorScheme.surface
+                    ),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = {
+                        keyboard?.hide()
+                        vm.runSearch()
+                    })
                 )
-            }
-            TextField(
-                value = vm.query,
-                onValueChange = { vm.query = it },
-                modifier = Modifier
-                    .weight(1f)
-                    .focusRequester(focusRequester),
-                placeholder = { Text(stringResource(R.string.search_hint)) },
-                singleLine = true,
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedIndicatorColor = MaterialTheme.colorScheme.surface,
-                    unfocusedIndicatorColor = MaterialTheme.colorScheme.surface
-                ),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = {
+                IconButton(onClick = {
                     keyboard?.hide()
                     vm.runSearch()
-                })
-            )
-            IconButton(onClick = {
-                keyboard?.hide()
-                vm.runSearch()
-            }) {
-                Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.search))
+                }) {
+                    Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.search))
+                }
             }
-        }
-        HorizontalDivider()
+            HorizontalDivider()
 
-        val state = vm.searchState
-        if (state == null) {
-            androidx.compose.foundation.layout.Box(
-                Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    stringResource(R.string.search_empty),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+            val state = vm.searchState
+            if (state == null) {
+                androidx.compose.foundation.layout.Box(
+                    Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        stringResource(R.string.search_empty),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                VideoList(
+                    state,
+                    onRetry = vm::runSearch,
+                    onPlay = onPlay,
+                    bottomPadding = bottomPadding,
+                    onLoadMore = vm::loadMoreSearch,
+                    loadingMore = vm.searchLoadingMore
                 )
             }
-        } else {
-            VideoList(
-                state,
-                onRetry = vm::runSearch,
-                onPlay = onPlay,
-                bottomPadding = bottomPadding,
-                onLoadMore = vm::loadMoreSearch,
-                loadingMore = vm.searchLoadingMore
-            )
         }
+        PullRefreshIndicator(vm.searchRefreshing, pullRefreshState, Modifier.align(Alignment.TopCenter))
     }
 }

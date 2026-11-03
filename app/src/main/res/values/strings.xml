@@ -46,6 +46,16 @@
     <string name="language">Language</string>
     <string name="language_system">System default</string>
     <string name="default_resolution">Default video quality</string>
+    <string name="blur_strength">Nav blur strength</string>
+    <string name="blur_light">Light</string>
+    <string name="blur_heavy">Heavy</string>
+    <string name="channel_feed">Channel</string>
+    <string name="channel_not_found">Channel not found</string>
+    <string name="download_starting">Downloading...</string>
+    <string name="download_error">Download failed: %1$s</string>
+    <string name="download_complete">Saved to Downloads</string>
+    <string name="download_failed">Download cancelled</string>
+    <string name="download">Download</string>
     <string name="playback_speed">Playback speed</string>
     <string name="fullscreen">Fullscreen</string>
     <string name="login_title">Sign in with Google</string>

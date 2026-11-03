@@ -20,7 +20,7 @@ import dev.chrisbanes.haze.hazeEffect
  * Material You surface colors. Older Android versions get a plain opaque surface instead.
  */
 @Composable
-fun Modifier.glass(hazeState: HazeState?, shape: Shape, elevation: Dp = 12.dp): Modifier {
+fun Modifier.glass(hazeState: HazeState?, shape: Shape, elevation: Dp = 12.dp, blurStrength: Dp = 20.dp): Modifier {
     val scheme = MaterialTheme.colorScheme
     val base = this.shadow(elevation, shape).clip(shape)
     return if (hazeState != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -29,7 +29,7 @@ fun Modifier.glass(hazeState: HazeState?, shape: Shape, elevation: Dp = 12.dp): 
             style = HazeStyle(
                 backgroundColor = scheme.surface,
                 tint = HazeTint(scheme.surfaceContainerHigh.copy(alpha = 0.62f)),
-                blurRadius = 20.dp,
+                blurRadius = blurStrength,
                 noiseFactor = 0.03f
             )
         )
