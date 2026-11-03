@@ -16,14 +16,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PullRefreshIndicator
-import androidx.compose.material3.PullRefreshState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberPullRefreshState
-import androidx.compose.material3.pullRefresh
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -48,14 +46,19 @@ fun SearchScreen(
 ) {
     val focusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
-    val pullRefreshState = rememberPullRefreshState(vm.searchRefreshing, { vm.refreshSearch() })
+    val pullToRefreshState = rememberPullToRefreshState(vm.searchRefreshing, { vm.refreshSearch() })
 
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
         keyboard?.show()
     }
 
-    Box(Modifier.pullRefresh(pullRefreshState)) {
+    PullToRefreshBox(
+        isRefreshing = vm.searchRefreshing,
+        onRefresh = { vm.refreshSearch() },
+        state = pullToRefreshState,
+        modifier = Modifier.fillMaxSize()
+    ) {
         Column(Modifier.fillMaxSize()) {
             Row(
                 Modifier
@@ -120,6 +123,5 @@ fun SearchScreen(
                 )
             }
         }
-        PullRefreshIndicator(vm.searchRefreshing, pullRefreshState, Modifier.align(Alignment.TopCenter))
     }
 }

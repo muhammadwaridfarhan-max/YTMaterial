@@ -15,11 +15,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.LoadingIndicator
-import androidx.compose.material3.PullRefreshIndicator
-import androidx.compose.material3.PullRefreshState
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberPullRefreshState
-import androidx.compose.material3.pullRefresh
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,8 +31,13 @@ import com.example.ytclient.data.VideoItem
 @Composable
 fun HomeScreen(vm: MainViewModel, onPlay: (VideoItem) -> Unit) {
     val filters = stringArrayResource(R.array.home_filters)
-    val pullRefreshState = rememberPullRefreshState(vm.homeRefreshing, { vm.refreshHome() })
-    Box(Modifier.pullRefresh(pullRefreshState)) {
+    val pullToRefreshState = rememberPullToRefreshState(vm.homeRefreshing, { vm.refreshHome() })
+    PullToRefreshBox(
+        isRefreshing = vm.homeRefreshing,
+        onRefresh = { vm.refreshHome() },
+        state = pullToRefreshState,
+        modifier = Modifier.fillMaxSize()
+    ) {
         Column(Modifier.fillMaxSize()) {
             LazyRow(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
@@ -57,6 +60,5 @@ fun HomeScreen(vm: MainViewModel, onPlay: (VideoItem) -> Unit) {
                 loadingMore = vm.homeLoadingMore
             )
         }
-        PullRefreshIndicator(vm.homeRefreshing, pullRefreshState, Modifier.align(Alignment.TopCenter))
     }
 }
