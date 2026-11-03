@@ -1,0 +1,25 @@
+# Gradle
+.gradle/
+build/
+.idea/
+*.iml
+.DS_Store
+
+# Local configuration
+local.properties
+
+# Keystore
+*.keystore
+*.jks
+
+# Log
+*.log
+
+# External native build
+.native*
+
+# Android Studio
+*.hprof
+
+# Editor
+.vscode/
