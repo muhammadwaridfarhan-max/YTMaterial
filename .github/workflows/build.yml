@@ -24,9 +24,12 @@ jobs:
           java-version: '17'
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          cmd: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+        run: |
+          if [ ! -d "$ANDROID_HOME" ]; then
+            mkdir -p $ANDROID_HOME
+            echo "y" | sdkmanager --licenses || true
+          fi
+          sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools"
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
