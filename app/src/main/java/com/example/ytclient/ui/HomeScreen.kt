@@ -29,7 +29,7 @@ import com.example.ytclient.R
 import com.example.ytclient.data.VideoItem
 
 @Composable
-fun HomeScreen(vm: MainViewModel, onPlay: (VideoItem) -> Unit) {
+fun HomeScreen(vm: MainViewModel, onPlay: (VideoItem) -> Unit, onChannelClick: (String) -> Unit) {
     val filters = stringArrayResource(R.array.home_filters)
     val pullToRefreshState = rememberPullToRefreshState()
     PullToRefreshBox(
@@ -56,6 +56,7 @@ fun HomeScreen(vm: MainViewModel, onPlay: (VideoItem) -> Unit) {
                 onRetry = vm::retryFilter,
                 onPlay = onPlay,
                 modifier = Modifier.fillMaxSize(),
+                onChannelClick = onChannelClick,
                 onLoadMore = vm::loadMoreHome,
                 loadingMore = vm.homeLoadingMore
             )

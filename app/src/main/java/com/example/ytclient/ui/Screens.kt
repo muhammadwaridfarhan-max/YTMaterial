@@ -42,6 +42,7 @@ fun VideoList(
     state: UiState,
     onRetry: () -> Unit,
     onPlay: (VideoItem) -> Unit,
+    onChannelClick: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     topPadding: Dp = 0.dp,
     bottomPadding: Dp = 0.dp,
@@ -78,7 +79,7 @@ fun VideoList(
                     item(key = "header", contentType = "header") { header() }
                 }
                 items(state.items, key = { it.url }, contentType = { "video" }) { video ->
-                    VideoCard(video, onClick = { onPlay(video) }, onChannelClick = { })
+                    VideoCard(video, onClick = { onPlay(video) }, onChannelClick = onChannelClick)
                 }
                 if (loadingMore) {
                     item(key = "loading-more", contentType = "loading") {
@@ -117,9 +118,9 @@ private fun Placeholder(
     header: (@Composable () -> Unit)?,
     content: @Composable () -> Unit
 ) {
-    Column(modifier.fillMaxSize().padding(top = topPadding + 4.dp)) {
+    Column(modifier.fillMaxSize().padding(horizontal = 12.dp, top = topPadding + 4.dp)) {
         if (header != null) {
-            Box(Modifier.padding(horizontal = 12.dp)) { header() }
+            Box(Modifier.padding(vertical = 8.dp)) { header() }
         }
         Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) { content() }
     }

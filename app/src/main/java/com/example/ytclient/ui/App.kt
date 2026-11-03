@@ -149,8 +149,8 @@ fun App(vm: MainViewModel = viewModel()) {
                             }
                     ) {
                         when (page) {
-                            0 -> HomeScreen(vm, onPlay = controller::open)
-                            1 -> ShortsScreen(vm = vm, shorts = shorts, mainPlayer = controller, onSearch = { showSearch = true }, bottomPadding = 0.dp)
+                            0 -> HomeScreen(vm, onPlay = controller::open, onChannelClick = { currentChannel = it; showChannel = true })
+                            1 -> ShortsScreen(vm = vm, shorts = shorts, mainPlayer = controller, onSearch = { showSearch = true }, bottomPadding = 90.dp)
                             2 -> Placeholder(Icons.Filled.List, R.string.nav_subs)
                             else -> YouScreen(onSignIn = { showLogin = true })
                         }
