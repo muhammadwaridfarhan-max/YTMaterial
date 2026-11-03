@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.example.ytclient.R
 import com.example.ytclient.data.VideoItem
 import com.example.ytclient.ui.components.VideoCard
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
