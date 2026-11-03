@@ -1,5 +1,7 @@
 package com.example.ytclient.ui
 
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -220,7 +222,6 @@ fun YouScreen(onSignIn: () -> Unit = {}) {
             current = settings.blurEnabled,
             onSelect = {
                 scope.launch { SettingsManager.setBlurEnabled(it) }
-                blurEnabled = it
                 dialog = null
             },
             onDismiss = { dialog = null }
