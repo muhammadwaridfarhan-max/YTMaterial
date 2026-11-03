@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 
 package com.example.ytclient.ui
 
@@ -39,14 +39,13 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -116,7 +115,7 @@ fun ShortsScreen(
                 .background(Color.Black)
         ) {
             when (val state = vm.shortsState) {
-                is UiState.Loading -> LoadingIndicator(Modifier.align(Alignment.Center))
+                is UiState.Loading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
 
                 is UiState.Error -> Column(
                     modifier = Modifier
@@ -320,7 +319,7 @@ private fun ShortPage(
                     }
                 }
             } else if (shorts.isBuffering || !shorts.hasFirstFrame) {
-                LoadingIndicator(Modifier.align(Alignment.Center))
+                CircularProgressIndicator(Modifier.align(Alignment.Center))
             }
         }
 

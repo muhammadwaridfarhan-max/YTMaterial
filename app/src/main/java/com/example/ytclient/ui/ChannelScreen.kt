@@ -16,12 +16,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,7 +32,6 @@ import com.example.ytclient.data.VideoItem
 import com.example.ytclient.ui.components.VideoCard
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ChannelScreen(
     channel: String,
@@ -62,7 +60,7 @@ fun ChannelScreen(
         }
         when (val state = vm.channelState) {
             null, UiState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                LoadingIndicator()
+                CircularProgressIndicator()
             }
             is UiState.Error -> Column(
                 modifier = Modifier
@@ -100,7 +98,7 @@ fun ChannelScreen(
                                     .fillMaxWidth()
                                     .padding(vertical = 16.dp),
                                 contentAlignment = Alignment.Center
-                            ) { LoadingIndicator(Modifier.size(40.dp)) }
+                            ) { CircularProgressIndicator(Modifier.size(40.dp)) }
                         }
                     }
                 }

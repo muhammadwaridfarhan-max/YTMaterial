@@ -23,14 +23,13 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -61,7 +60,7 @@ private sealed interface LoginState {
     data class Failed(val message: String) : LoginState
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginSheet(onDismiss: () -> Unit) {
     val context = LocalContext.current
@@ -107,7 +106,7 @@ fun LoginSheet(onDismiss: () -> Unit) {
                     style = MaterialTheme.typography.titleLarge
                 )
                 when (s) {
-                    LoginState.Loading -> Box(Modifier.padding(24.dp)) { LoadingIndicator() }
+                    LoginState.Loading -> Box(Modifier.padding(24.dp)) { CircularProgressIndicator() }
 
                     is LoginState.ShowCode -> {
                         Text(

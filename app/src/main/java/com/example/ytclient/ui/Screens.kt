@@ -14,9 +14,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.Text
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -36,7 +35,6 @@ import com.example.ytclient.ui.components.VideoCard
  * Shared video feed. [onLoadMore] is called when the user nears the end, which makes the feed
  * endless; [header] (e.g. filter chips) scrolls with the list and is also shown while loading.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun VideoList(
     state: UiState,
@@ -88,7 +86,7 @@ fun VideoList(
                                 .fillMaxWidth()
                                 .padding(vertical = 16.dp),
                             contentAlignment = Alignment.Center
-                        ) { LoadingIndicator(Modifier.size(40.dp)) }
+                        ) { CircularProgressIndicator(Modifier.size(40.dp)) }
                     }
                 }
             }
@@ -96,7 +94,7 @@ fun VideoList(
             Placeholder(modifier, topPadding, header) { Text(stringResource(R.string.no_results)) }
         }
 
-        is UiState.Loading -> Placeholder(modifier, topPadding, header) { LoadingIndicator() }
+        is UiState.Loading -> Placeholder(modifier, topPadding, header) { CircularProgressIndicator() }
 
         is UiState.Error -> Placeholder(modifier, topPadding, header) {
             Column(
