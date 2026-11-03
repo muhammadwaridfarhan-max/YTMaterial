@@ -12,6 +12,8 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.expandIn
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
@@ -72,7 +74,6 @@ import com.example.ytclient.data.VideoItem
 import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
-import kotlin.math.abs
 import androidx.compose.runtime.collectAsState
 
 @Composable
@@ -100,7 +101,10 @@ fun App(vm: MainViewModel = viewModel()) {
     var showLogin by rememberSaveable { mutableStateOf(false) }
     var showChannel by remember { mutableStateOf(false) }
     var currentChannel by remember { mutableStateOf<String?>(null) }
+
+    // Blur settings from AppSettings
     val settings by com.example.ytclient.settings.SettingsManager.settings.collectAsState(initial = com.example.ytclient.settings.AppSettings())
+    var blurEnabled by rememberSaveable { mutableStateOf(settings.blurEnabled) }
 
     BackHandler(enabled = pagerState.currentPage != 0) {
         scope.launch { pagerState.animateScrollToPage(0) }
@@ -120,7 +124,8 @@ fun App(vm: MainViewModel = viewModel()) {
                     selected = pagerState.currentPage,
                     onSelect = { scope.launch { pagerState.animateScrollToPage(it) } },
                     hazeState = hazeState,
-                    blurStrength = settings.blurStrength
+                    blurStrength = settings.blurStrength,
+                    blurEnabled = blurEnabled
                 )
             }
         ) { padding ->
@@ -150,7 +155,14 @@ fun App(vm: MainViewModel = viewModel()) {
                     ) {
                         when (page) {
                             0 -> HomeScreen(vm, onPlay = controller::open, onChannelClick = { currentChannel = it; showChannel = true })
-                            1 -> ShortsScreen(vm = vm, shorts = shorts, mainPlayer = controller, onSearch = { showSearch = true }, bottomPadding = 90.dp)
+                            1 -> ShortsScreen(
+                                vm = vm,
+                                shorts = shorts,
+                                mainPlayer = controller,
+                                onSearch = { showSearch = true },
+                                bottomPadding = 90.dp,
+                                onChannelClick = { currentChannel = it; showChannel = true }
+                            )
                             2 -> Placeholder(Icons.Filled.List, R.string.nav_subs)
                             else -> YouScreen(onSignIn = { showLogin = true })
                         }
@@ -334,4 +346,3 @@ private fun Placeholder(icon: ImageVector, @StringRes label: Int) {
         )
     }
 }
-

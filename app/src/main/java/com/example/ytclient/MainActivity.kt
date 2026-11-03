@@ -27,6 +27,10 @@ class MainActivity : AppCompatActivity() {
             LaunchedEffect(settings.language) {
                 YTApp.applyLanguage(this@MainActivity, settings.language)
             }
+            // Always show the composition for blur state updates
+            LaunchedEffect(settings.blurEnabled) {
+                // Re-read blur state; bar will read from SettingsManager directly
+            }
             YTTheme(settings) {
                 App()
             }

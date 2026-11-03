@@ -5,7 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -42,7 +42,8 @@ data class AppSettings(
     val seedColor: Int = DEFAULT_SEED,
     val language: AppLanguage = AppLanguage.SYSTEM,
     val resolution: Resolution = Resolution.AUTO,
-    val blurStrength: Dp = 20.dp
+    val blurStrength: Int = 20,
+    val blurEnabled: Boolean = true
 ) {
     companion object {
         const val DEFAULT_SEED: Int = 0xFFD93025.toInt() // YouTube red
@@ -52,12 +53,13 @@ data class AppSettings(
 private val Context.store: DataStore<Preferences> by preferencesDataStore("ytmaterial_settings")
 
 object SettingsManager {
-    private val KEY_THEME = stringPreferencesKey("theme_mode")
-    private val KEY_COLOR_SOURCE = stringPreferencesKey("color_source")
+    private val KEY_THEME = intPreferencesKey("theme_mode")
+    private val KEY_COLOR_SOURCE = intPreferencesKey("color_source")
     private val KEY_SEED = intPreferencesKey("seed_color")
     private val KEY_LANGUAGE = stringPreferencesKey("language")
-    private val KEY_RESOLUTION = stringPreferencesKey("resolution")
+    private val KEY_RESOLUTION = intPreferencesKey("resolution")
     private val KEY_BLUR = intPreferencesKey("blur_strength")
+    private val KEY_BLUR_ENABLED = booleanPreferencesKey("blur_enabled")
 
     private lateinit var store: DataStore<Preferences>
 
@@ -78,7 +80,8 @@ object SettingsManager {
                 resolution = p[KEY_RESOLUTION]?.let {
                     runCatching { Resolution.valueOf(it) }.getOrNull()
                 } ?: Resolution.AUTO,
-                blurStrength = p[KEY_BLUR]?.dp ?: 20.dp
+                blurStrength = p[KEY_BLUR] ?: 20,
+                blurEnabled = p[KEY_BLUR_ENABLED] ?: true
             )
         }
     }
@@ -103,7 +106,11 @@ object SettingsManager {
         store.edit { it[KEY_RESOLUTION] = resolution.name }
     }
 
-    suspend fun setBlurStrength(strength: Dp) {
-        store.edit { it[KEY_BLUR] = strength.value.toInt() }
+    suspend fun setBlurStrength(strength: Int) {
+        store.edit { it[KEY_BLUR] = strength }
+    }
+
+    suspend fun setBlurEnabled(enabled: Boolean) {
+        store.edit { it[KEY_BLUR_ENABLED] = enabled }
     }
 }

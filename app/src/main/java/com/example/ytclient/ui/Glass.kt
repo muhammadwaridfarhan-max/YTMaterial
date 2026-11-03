@@ -18,18 +18,28 @@ import dev.chrisbanes.haze.hazeEffect
 /**
  * Light frosted-glass surface: blurs whatever is drawn behind it (Android 12+) and tints it with
  * Material You surface colors. Older Android versions get a plain opaque surface instead.
+ *
+ * @param blurRadius animated blur radius in Dp (0 = no blur). Supports smooth animation.
+ * @param blurEnabled whether blur is currently enabled. When false, blur animates to 0.
  */
 @Composable
-fun Modifier.glass(hazeState: HazeState?, shape: Shape, elevation: Dp = 12.dp, blurStrength: Dp = 20.dp): Modifier {
+fun Modifier.glass(
+    hazeState: HazeState?,
+    shape: Shape,
+    elevation: Dp = 12.dp,
+    blurRadius: Dp = 20.dp,
+    blurEnabled: Boolean = true
+): Modifier {
     val scheme = MaterialTheme.colorScheme
     val base = this.shadow(elevation, shape).clip(shape)
     return if (hazeState != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        val effectiveRadius = if (blurEnabled) blurRadius else 0.dp
         base.hazeEffect(
             state = hazeState,
             style = HazeStyle(
                 backgroundColor = scheme.surface,
                 tint = HazeTint(scheme.surfaceContainerHigh.copy(alpha = 0.62f)),
-                blurRadius = blurStrength,
+                blurRadius = effectiveRadius,
                 noiseFactor = 0.03f
             )
         )

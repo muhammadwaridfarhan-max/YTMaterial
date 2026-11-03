@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Checkbox
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Hd
 import androidx.compose.material.icons.filled.KeyboardArrowRight
@@ -66,7 +67,7 @@ import com.example.ytclient.settings.ThemeMode
 import com.example.ytclient.ui.theme.SeedColorSwatches
 import kotlinx.coroutines.launch
 
-private enum class SettingsDialog { THEME, COLOR, LANGUAGE, RESOLUTION, BLUR }
+private enum class SettingsDialog { THEME, COLOR, LANGUAGE, RESOLUTION, BLUR, BLUR_ENABLED }
 
 @Composable
 fun YouScreen(onSignIn: () -> Unit = {}) {
@@ -160,8 +161,16 @@ fun YouScreen(onSignIn: () -> Unit = {}) {
             SettingsItem(
                 icon = Icons.Filled.DarkMode,
                 title = stringResource(R.string.blur_strength),
-                value = if (settings.blurStrength.value <= 12) stringResource(R.string.blur_light) else stringResource(R.string.blur_heavy)
+                value = if (settings.blurStrength <= 12) stringResource(R.string.blur_light) else stringResource(R.string.blur_heavy)
             ) { dialog = SettingsDialog.BLUR }
+        }
+        item {
+            val checkedLabel = if (settings.blurEnabled) stringResource(R.string.blur_enabled_on) else stringResource(R.string.blur_enabled_off)
+            SettingsItem(
+                icon = Icons.Filled.Checkbox,
+                title = stringResource(R.string.blur_toggle),
+                value = checkedLabel
+            ) { dialog = SettingsDialog.BLUR_ENABLED }
         }
     }
 
@@ -201,6 +210,16 @@ fun YouScreen(onSignIn: () -> Unit = {}) {
             current = settings.blurStrength,
             onSelect = {
                 scope.launch { SettingsManager.setBlurStrength(it) }
+                dialog = null
+            },
+            onDismiss = { dialog = null }
+        )
+
+        SettingsDialog.BLUR_ENABLED -> BlurEnabledDialog(
+            current = settings.blurEnabled,
+            onSelect = {
+                scope.launch { SettingsManager.setBlurEnabled(it) }
+                blurEnabled = it
                 dialog = null
             },
             onDismiss = { dialog = null }
@@ -268,6 +287,53 @@ private fun resolutionLabel(resolution: Resolution): String =
     } else {
         "${resolution.height}p"
     }
+
+@Composable
+private fun BlurEnabledDialog(
+    current: Boolean,
+    onSelect: (Boolean) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.blur_toggle)) },
+        text = {
+            Column {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { onSelect(true) }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(selected = true, onClick = { onSelect(true) })
+                    Text(
+                        stringResource(R.string.blur_enabled_on),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { onSelect(false) }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(selected = false, onClick = { onSelect(false) })
+                    Text(
+                        stringResource(R.string.blur_enabled_off),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        }
+    )
+}
 
 @Composable
 private fun ThemeDialog(
@@ -483,11 +549,11 @@ private fun ResolutionDialog(
 
 @Composable
 private fun BlurDialog(
-    current: Dp,
-    onSelect: (Dp) -> Unit,
+    current: Int,
+    onSelect: (Int) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var value by remember { mutableFloatStateOf(current.value) }
+    var value by remember { mutableFloatStateOf(current.toFloat()) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.blur_strength)) },
@@ -502,9 +568,9 @@ private fun BlurDialog(
                 Slider(
                     value = value,
                     onValueChange = { value = it },
-                    valueRange = 4f..40f,
-                    steps = 18,
-                    onValueChangeFinished = { onSelect(value.dp) }
+                    valueRange = 0f..40f,
+                    steps = 20,
+                    onValueChangeFinished = { onSelect(value.roundToInt()) }
                 )
             }
         },

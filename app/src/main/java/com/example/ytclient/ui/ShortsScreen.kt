@@ -12,12 +12,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.ui.input.pointer.pointerInput
-import kotlinx.coroutines.delay
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -51,6 +45,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -85,6 +81,9 @@ import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
 import com.example.ytclient.R
 import com.example.ytclient.data.VideoItem
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 /** YouTube-Shorts style feed: one full-screen clip per page, autoplay on the settled page. */
 @Composable
@@ -93,8 +92,85 @@ fun ShortsScreen(
     shorts: ShortsPlayer,
     mainPlayer: PlayerController,
     onSearch: () -> Unit,
-    bottomPadding: Dp
+    bottomPadding: Dp,
+    onChannelClick: (String) -> Unit = {}
 ) {
+    val pullToRefreshState = rememberPullToRefreshState()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    // Pull-to-refresh for shorts feed
+    PullToRefreshBox(
+        isRefreshing = vm.shortsRefreshing,
+        onRefresh = { scope.launch { vm.refreshShorts() } },
+        state = pullToRefreshState,
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+        ) {
+            when (val state = vm.shortsState) {
+                is UiState.Loading -> LoadingIndicator(Modifier.align(Alignment.Center))
+
+                is UiState.Error -> Column(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(state.message, color = Color.White, textAlign = TextAlign.Center)
+                    Spacer(Modifier.height(16.dp))
+                    Button(onClick = { vm.loadShorts(force = true) }) {
+                        Text(stringResource(R.string.retry))
+                    }
+                }
+
+                is UiState.Success -> ShortsPager(
+                    state.items,
+                    vm,
+                    shorts,
+                    bottomPadding,
+                    onChannelClick = onChannelClick
+                )
+            }
+
+            // Top overlay: title + search
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
+                    .background(
+                        Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.5f), Color.Transparent))
+                    )
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    stringResource(R.string.nav_shorts),
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.weight(1f))
+                IconButton(onClick = onSearch) {
+                    Icon(
+                        Icons.Filled.Search,
+                        contentDescription = stringResource(R.string.search),
+                        tint = Color.White
+                    )
+                }
+            }
+        }
+    }
+
+    // LaunchedEffect for shorts loading
     LaunchedEffect(Unit) {
         mainPlayer.player.pause()
         vm.loadShorts()
@@ -115,63 +191,6 @@ fun ShortsScreen(
             shorts.pause()
         }
     }
-
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-    ) {
-        when (val state = vm.shortsState) {
-            is UiState.Loading -> LoadingIndicator(Modifier.align(Alignment.Center))
-
-            is UiState.Error -> Column(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(state.message, color = Color.White, textAlign = TextAlign.Center)
-                Spacer(Modifier.height(16.dp))
-                Button(onClick = { vm.loadShorts(force = true) }) {
-                    Text(stringResource(R.string.retry))
-                }
-            }
-
-            is UiState.Success -> ShortsPager(state.items, vm, shorts, bottomPadding)
-        }
-
-        // Top overlay: title + search
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(120.dp)
-                .background(
-                    Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.5f), Color.Transparent))
-                )
-        )
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                stringResource(R.string.nav_shorts),
-                color = Color.White,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(Modifier.weight(1f))
-            IconButton(onClick = onSearch) {
-                Icon(
-                    Icons.Filled.Search,
-                    contentDescription = stringResource(R.string.search),
-                    tint = Color.White
-                )
-            }
-        }
-    }
 }
 
 @Composable
@@ -179,7 +198,8 @@ private fun ShortsPager(
     items: List<VideoItem>,
     vm: MainViewModel,
     shorts: ShortsPlayer,
-    bottomPadding: Dp
+    bottomPadding: Dp,
+    onChannelClick: (String) -> Unit
 ) {
     val latest by rememberUpdatedState(items)
     val pagerState = rememberPagerState(
@@ -207,7 +227,8 @@ private fun ShortsPager(
             item = latest[page],
             isActive = pagerState.settledPage == page,
             shorts = shorts,
-            bottomPadding = bottomPadding
+            bottomPadding = bottomPadding,
+            onChannelClick = onChannelClick
         )
     }
 }
@@ -218,7 +239,8 @@ private fun ShortPage(
     item: VideoItem,
     isActive: Boolean,
     shorts: ShortsPlayer,
-    bottomPadding: Dp
+    bottomPadding: Dp,
+    onChannelClick: (String) -> Unit
 ) {
     val context = LocalContext.current
     var liked by rememberSaveable(item.url) { mutableStateOf(false) }
@@ -231,9 +253,9 @@ private fun ShortPage(
     }
 
     val videoVisible = isActive && shorts.currentUrl == item.url && shorts.hasFirstFrame
-    val thumbAlpha by animateFloatAsState(
+    val thumbAlpha by androidx.compose.animation.core.animateFloatAsState(
         targetValue = if (videoVisible) 0f else 1f,
-        animationSpec = tween(180),
+        animationSpec = androidx.compose.animation.core.tween(180),
         label = "thumb"
     )
 
@@ -242,7 +264,7 @@ private fun ShortPage(
             .fillMaxSize()
             .background(Color.Black)
             .pointerInput(isActive) {
-                detectTapGestures(
+                androidx.compose.foundation.gestures.detectTapGestures(
                     onTap = { if (isActive) shorts.togglePlay() },
                     onDoubleTap = {
                         if (isActive) {
@@ -349,13 +371,17 @@ private fun ShortPage(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     ShortAvatar(item.channelAvatar, item.channel)
                     Spacer(Modifier.width(10.dp))
+                    // Channel name clickable to open channel feed
                     Text(
                         item.channel,
                         color = Color.White,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.clickable {
+                            onChannelClick(item.channel)
+                        }
                     )
                 }
                 Spacer(Modifier.height(8.dp))
@@ -386,7 +412,7 @@ private fun ShortPage(
                     onClick = {
                         val send = Intent(Intent.ACTION_SEND).apply {
                             type = "text/plain"
-                            putExtra(Intent.EXTRA_TEXT, "${item.title}\n${item.url}")
+                            putExtra(Intent.EXTRA_TEXT, "${item.title}\\n${item.url}")
                         }
                         context.startActivity(Intent.createChooser(send, null))
                     }
@@ -415,8 +441,7 @@ private fun ShortAvatar(url: String?, name: String) {
         modifier = Modifier
             .size(36.dp)
             .clip(CircleShape)
-            .background(Color.White.copy(alpha = 0.2f)),
-        contentAlignment = Alignment.Center
+            .background(Color.White.copy(alpha = 0.2f))
     ) {
         if (!url.isNullOrBlank()) {
             AsyncImage(
