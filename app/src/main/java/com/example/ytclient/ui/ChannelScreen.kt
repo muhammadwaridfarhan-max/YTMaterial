@@ -50,7 +50,7 @@ fun ChannelScreen(
         ) {
             IconButton(onClick = onBack) {
                 Icon(
-                    androidx.compose.material.icons.automirrored.filled.ArrowBack,
+                    ArrowBack,
                     contentDescription = stringResource(R.string.close)
                 )
             }
