@@ -102,9 +102,10 @@ fun App(vm: MainViewModel = viewModel()) {
     var showChannel by remember { mutableStateOf(false) }
     var currentChannel by remember { mutableStateOf<String?>(null) }
 
-    // Blur settings from AppSettings
+    // Collect blur settings as reactive state
     val settings by com.example.ytclient.settings.SettingsManager.settings.collectAsState(initial = com.example.ytclient.settings.AppSettings())
-    var blurEnabled by rememberSaveable { mutableStateOf(settings.blurEnabled) }
+    val blurStrength = settings.blurStrength
+    val blurEnabled by settings.blurEnabled
 
     BackHandler(enabled = pagerState.currentPage != 0) {
         scope.launch { pagerState.animateScrollToPage(0) }
@@ -124,7 +125,7 @@ fun App(vm: MainViewModel = viewModel()) {
                     selected = pagerState.currentPage,
                     onSelect = { scope.launch { pagerState.animateScrollToPage(it) } },
                     hazeState = hazeState,
-                    blurStrength = settings.blurStrength,
+                    blurStrength = blurStrength,
                     blurEnabled = blurEnabled
                 )
             }
