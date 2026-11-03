@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -53,11 +54,11 @@ data class AppSettings(
 private val Context.store: DataStore<Preferences> by preferencesDataStore("ytmaterial_settings")
 
 object SettingsManager {
-    private val KEY_THEME = intPreferencesKey("theme_mode")
-    private val KEY_COLOR_SOURCE = intPreferencesKey("color_source")
+    private val KEY_THEME = stringPreferencesKey("theme_mode")
+    private val KEY_COLOR_SOURCE = stringPreferencesKey("color_source")
     private val KEY_SEED = intPreferencesKey("seed_color")
     private val KEY_LANGUAGE = stringPreferencesKey("language")
-    private val KEY_RESOLUTION = intPreferencesKey("resolution")
+    private val KEY_RESOLUTION = stringPreferencesKey("resolution")
     private val KEY_BLUR = intPreferencesKey("blur_strength")
     private val KEY_BLUR_ENABLED = booleanPreferencesKey("blur_enabled")
 

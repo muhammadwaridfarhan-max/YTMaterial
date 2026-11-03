@@ -33,6 +33,8 @@ class MainViewModel : ViewModel() {
         private set
     /** Last settled page of the Shorts pager, so the tab resumes where you left it. */
     var shortsIndex by mutableIntStateOf(0)
+    var shortsRefreshing by mutableStateOf(false)
+        private set
     private var shortsJob: Job? = null
     private var shortsLoadingMore = false
 
@@ -226,6 +228,17 @@ class MainViewModel : ViewModel() {
                 },
                 onFailure = { UiState.Error(it.message ?: "Gagal memuat Shorts") }
             )
+        }
+    }
+
+    fun refreshShorts() {
+        shortsRefreshing = true
+        viewModelScope.launch {
+            try {
+                loadShorts(force = true)
+            } finally {
+                shortsRefreshing = false
+            }
         }
     }
 

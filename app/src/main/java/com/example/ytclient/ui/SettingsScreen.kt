@@ -21,7 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Checkbox
+import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Hd
 import androidx.compose.material.icons.filled.KeyboardArrowRight
@@ -66,6 +66,7 @@ import com.example.ytclient.settings.SettingsManager
 import com.example.ytclient.settings.ThemeMode
 import com.example.ytclient.ui.theme.SeedColorSwatches
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 private enum class SettingsDialog { THEME, COLOR, LANGUAGE, RESOLUTION, BLUR, BLUR_ENABLED }
 
@@ -167,7 +168,7 @@ fun YouScreen(onSignIn: () -> Unit = {}) {
         item {
             val checkedLabel = if (settings.blurEnabled) stringResource(R.string.blur_enabled_on) else stringResource(R.string.blur_enabled_off)
             SettingsItem(
-                icon = Icons.Filled.Checkbox,
+                icon = Icons.Filled.CheckBox,
                 title = stringResource(R.string.blur_toggle),
                 value = checkedLabel
             ) { dialog = SettingsDialog.BLUR_ENABLED }

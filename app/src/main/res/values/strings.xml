@@ -49,6 +49,9 @@
     <string name="blur_strength">Nav blur strength</string>
     <string name="blur_light">Light</string>
     <string name="blur_heavy">Heavy</string>
+    <string name="blur_toggle">Blur</string>
+    <string name="blur_enabled_on">On</string>
+    <string name="blur_enabled_off">Off</string>
     <string name="channel_feed">Channel</string>
     <string name="channel_not_found">Channel not found</string>
     <string name="download_starting">Downloading...</string>

@@ -74,6 +74,7 @@ import com.example.ytclient.data.VideoItem
 import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.math.abs
 import androidx.compose.runtime.collectAsState
 
 @Composable
@@ -105,7 +106,7 @@ fun App(vm: MainViewModel = viewModel()) {
     // Collect blur settings as reactive state
     val settings by com.example.ytclient.settings.SettingsManager.settings.collectAsState(initial = com.example.ytclient.settings.AppSettings())
     val blurStrength = settings.blurStrength
-    val blurEnabled by settings.blurEnabled
+    val blurEnabled = settings.blurEnabled
 
     BackHandler(enabled = pagerState.currentPage != 0) {
         scope.launch { pagerState.animateScrollToPage(0) }

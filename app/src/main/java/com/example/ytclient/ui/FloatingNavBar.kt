@@ -3,13 +3,13 @@ package com.example.ytclient.ui
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
-import androidx.compose.animation.expandIn
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -125,8 +125,8 @@ private fun NavPill(
                 role = Role.Tab,
                 onClick = onClick
             )
-            .semantics { this.selected = selected }
-            .padding(horizontal = if (selected) 18.dp else 14.dp),
+            .semantics { }
+            .padding(horizontal = if (selected) 18.dp else 14.dp)
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
@@ -141,7 +141,7 @@ private fun NavPill(
         AnimatedContent(
             targetState = selected,
             label = "pillLabel",
-            transitionSpec = { fadeIn(tween(120)) + expandIn(startMargin = { Int.PositiveInfinity }, anim = tween(120)) },
+            transitionSpec = { fadeIn(tween(120)) + fadeOut(tween(120)) },
             modifier = Modifier.padding(start = 8.dp)
         ) { isSelected ->
             if (isSelected) {
