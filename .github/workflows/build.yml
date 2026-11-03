@@ -36,7 +36,7 @@ jobs:
           validate-wrappers: false
 
       - name: Build debug APK
-        run: ./gradlew --no-daemon assembleDebug --stacktrace
+        run: gradle --no-daemon assembleDebug --stacktrace
 
       - uses: actions/upload-artifact@v4
         if: always()
