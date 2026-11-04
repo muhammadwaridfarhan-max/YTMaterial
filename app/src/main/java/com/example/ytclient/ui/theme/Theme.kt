@@ -1,12 +1,20 @@
 package com.example.ytclient.ui.theme
 
 import android.os.Build
+import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
+import androidx.activity.enableEdgeToEdge
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.SideEffect
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.example.ytclient.settings.AppSettings
@@ -83,5 +91,28 @@ fun YTTheme(
 
         else -> colorSchemeFromSeed(settings.seedColor, dark)
     }
-    MaterialTheme(colorScheme = colorScheme, content = content)
+    // Keep status/nav bar icons readable when the in-app theme differs from the system theme.
+    val activity = remember(context) { context.findComponentActivity() }
+    SideEffect {
+        activity?.enableEdgeToEdge(
+            statusBarStyle = if (dark) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+            else SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
+            navigationBarStyle = if (dark) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+            else SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+        )
+    }
+    MaterialTheme(colorScheme = colorScheme) {
+        // Root Surface: LocalContentColor defaults to black in Compose, which made any Text/Icon
+        // without an explicit color unreadable in dark mode. This makes onSurface the default.
+        Surface(color = colorScheme.surface, contentColor = colorScheme.onSurface, content = content)
+    }
+}
+
+private fun Context.findComponentActivity(): ComponentActivity? {
+    var c: Context? = this
+    while (c is ContextWrapper) {
+        if (c is ComponentActivity) return c
+        c = c.baseContext
+    }
+    return null
 }

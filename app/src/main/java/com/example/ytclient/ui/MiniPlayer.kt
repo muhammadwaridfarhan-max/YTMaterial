@@ -42,7 +42,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -203,13 +202,20 @@ fun MiniPlayer(
                                 overflow = TextOverflow.Ellipsis
                             )
                         }
-                        FilledTonalIconButton(onClick = controller::togglePlay) {
+                        FilledTonalIconButton(
+                            onClick = controller::togglePlay,
+                            colors = androidx.compose.material3.IconButtonDefaults.filledTonalIconButtonColors(
+                                containerColor = scheme.primaryContainer,
+                                contentColor = scheme.onPrimaryContainer
+                            )
+                        ) {
                             Icon(
                                 if (controller.isPlayingState) Icons.Filled.Pause
                                 else Icons.Filled.PlayArrow,
                                 contentDescription = stringResource(
                                     if (controller.isPlayingState) R.string.pause else R.string.play
-                                )
+                                ),
+                                tint = scheme.onPrimaryContainer
                             )
                         }
                         IconButton(onClick = controller::close) {
@@ -223,7 +229,7 @@ fun MiniPlayer(
                     WavyProgress(
                         progress = progress,
                         animate = controller.isPlayingState,
-                        activeColor = Color(0xFFFF2D3C),
+                        activeColor = scheme.primary,
                         trackColor = scheme.outlineVariant,
                         modifier = Modifier.padding(start = 18.dp, end = 18.dp, bottom = 6.dp),
                         height = 8.dp,

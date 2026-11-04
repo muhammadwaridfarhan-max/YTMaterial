@@ -63,60 +63,83 @@ fun FloatingTopBar(
             spring(stiffness = Spring.StiffnessMedium, visibilityThreshold = IntOffset(1, 1))
         ) { -it * 2 } + fadeOut(tween(90))
     ) {
-        Box(
+        val scheme = MaterialTheme.colorScheme
+        Row(
             Modifier
                 .statusBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .fillMaxWidth()
-                .glass(
-                    hazeState,
-                    RoundedCornerShape(28.dp),
-                    elevation = 10.dp,
-                    blurRadius = blurStrength.dp,
-                    blurEnabled = blurEnabled
-                )
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            GlassContent {
-                val onSurface = MaterialTheme.colorScheme.onSurface
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .padding(start = 14.dp, end = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        Modifier
-                            .size(30.dp)
-                            .clip(RoundedCornerShape(9.dp))
-                            .background(Color(0xFFFF0000)),
-                        contentAlignment = Alignment.Center
+            // MeeTube-style compact brand pill (44dp, fully rounded), Material You accent mark.
+            Box(
+                Modifier.glass(
+                    hazeState, RoundedCornerShape(22.dp), elevation = 6.dp,
+                    blurRadius = blurStrength.dp, blurEnabled = blurEnabled
+                )
+            ) {
+                GlassContent {
+                    Row(
+                        Modifier.height(44.dp).padding(start = 12.dp, end = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color.White)
-                    }
-                    Spacer(Modifier.width(10.dp))
-                    Text(
-                        stringResource(R.string.app_name),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = onSurface
-                    )
-                    Spacer(Modifier.weight(1f))
-                    IconButton(onClick = onSearch) {
-                        Icon(
-                            Icons.Filled.Search,
-                            contentDescription = stringResource(R.string.search),
-                            tint = onSurface
-                        )
-                    }
-                    IconButton(onClick = onProfile) {
-                        Icon(
-                            Icons.Filled.Person,
-                            contentDescription = stringResource(R.string.nav_you),
-                            tint = onSurface
+                        Box(
+                            Modifier
+                                .size(24.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(scheme.primary),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Filled.PlayArrow, contentDescription = null,
+                                tint = scheme.onPrimary, modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            stringResource(R.string.app_name),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Medium,
+                            color = scheme.onSurface,
+                            maxLines = 1
                         )
                     }
                 }
+            }
+            Spacer(Modifier.weight(1f))
+            GlassCircleButton(
+                onClick = onSearch, hazeState = hazeState, blurStrength = blurStrength,
+                blurEnabled = blurEnabled, icon = Icons.Filled.Search,
+                description = stringResource(R.string.search)
+            )
+            Spacer(Modifier.width(8.dp))
+            GlassCircleButton(
+                onClick = onProfile, hazeState = hazeState, blurStrength = blurStrength,
+                blurEnabled = blurEnabled, icon = Icons.Filled.Person,
+                description = stringResource(R.string.nav_you)
+            )
+        }
+    }
+}
+
+@Composable
+private fun GlassCircleButton(
+    onClick: () -> Unit,
+    hazeState: HazeState?,
+    blurStrength: Int,
+    blurEnabled: Boolean,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    description: String
+) {
+    Box(
+        Modifier.glass(
+            hazeState, androidx.compose.foundation.shape.CircleShape, elevation = 6.dp,
+            blurRadius = blurStrength.dp, blurEnabled = blurEnabled
+        )
+    ) {
+        GlassContent {
+            IconButton(onClick = onClick, modifier = Modifier.size(44.dp)) {
+                Icon(icon, contentDescription = description, tint = MaterialTheme.colorScheme.onSurface)
             }
         }
     }
