@@ -98,6 +98,9 @@ import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
 import com.example.ytclient.R
 import com.example.ytclient.data.Repository
+import com.example.ytclient.data.StreamTrack
+import com.example.ytclient.data.VideoDownloader
+import com.example.ytclient.data.VideoStreams
 import com.example.ytclient.ui.components.VideoCard
 import com.example.ytclient.ui.components.WavySeekBar
 import com.example.ytclient.ui.components.formatViews
@@ -410,41 +413,32 @@ fun PlayerScreen(
         ModalBottomSheet(onDismissRequest = { showDownloadSheet = false }) {
             Column(Modifier.padding(bottom = 32.dp)) {
                 SheetTitle(stringResource(R.string.download))
+                val progress = VideoDownloader.progress
                 if (streams == null || item.url.isBlank()) {
                     Text(
                         stringResource(R.string.err_no_stream),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(horizontal = 24.dp)
                     )
-                } else {
-                    val options = buildList {
-                        add(Triple(-1, stringResource(R.string.quality_auto), null))
-                        val seen = mutableSetOf<Int>()
-                        (streams.progressive + streams.videoOnly)
-                            .sortedByDescending { it.height }
-                            .forEach { track ->
-                                if (seen.add(track.height)) {
-                                    add(Triple(track.height, "${track.height}p", track))
-                                }
-                            }
+                } else if (progress != null) {
+                    Column(Modifier.padding(horizontal = 24.dp, vertical = 12.dp)) {
+                        Text(
+                            stringResource(R.string.download_starting) + " " + (progress * 100).toInt() + "%",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        )
+                        androidx.compose.material3.LinearProgressIndicator(
+                            progress = { progress },
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
-                    val scope = rememberCoroutineScope()
-                    options.forEach { (h, label, track) ->
-                        OptionRow(label = label, selected = false) {
-                            val url = if (h == -1) {
-                                streams.progressive.firstOrNull()?.url
-                                    ?: streams.videoOnly.firstOrNull()?.url
-                            } else {
-                                track?.url
-                            }
-                            if (url != null) {
-                                scope.launch {
-                                    val result = Repository.downloadVideo(context, url, item.title)
-                                    downloadMessage = result.exceptionOrNull()?.message
-                                        ?: context.getString(R.string.download_complete)
-                                    showDownloadSheet = false
-                                }
-                            }
+                } else {
+                    val audioLabel = stringResource(R.string.download_audio_only)
+                    downloadOptions(streams, audioLabel).forEach { opt ->
+                        OptionRow(label = opt.label, selected = false) {
+                            VideoDownloader.start(
+                                context, item.title, opt.track, opt.mux, streams.audioUrl, streams.audioExt
+                            )
                         }
                     }
                 }
@@ -458,6 +452,35 @@ fun PlayerScreen(
             downloadMessage = null
         }
     }
+}
+
+private data class DlOption(val label: String, val track: StreamTrack?, val mux: Boolean)
+
+/** One entry per resolution: progressive (has audio) first, otherwise H.264/H.265 video-only + audio merged. */
+private fun downloadOptions(s: VideoStreams, audioLabel: String): List<DlOption> {
+    val candidates = mutableListOf<Pair<StreamTrack, Boolean>>()
+    s.progressive.forEach { candidates.add(it to false) }
+    if (s.audioUrl != null && s.audioExt == "m4a") {
+        s.videoOnly
+            .filter { it.ext == "mp4" && (it.codec.startsWith("avc") || it.codec.startsWith("hev") || it.codec.startsWith("hvc")) }
+            .forEach { candidates.add(it to true) }
+    }
+    val seen = mutableSetOf<Int>()
+    val out = mutableListOf<DlOption>()
+    candidates
+        .sortedWith(
+            compareByDescending<Pair<StreamTrack, Boolean>> { it.first.height }
+                .thenBy { it.second }
+                .thenByDescending { it.first.fps }
+        )
+        .forEach { (track, mux) ->
+            if (seen.add(track.height)) {
+                val fps = if (track.fps > 30) track.fps.toString() else ""
+                out.add(DlOption("${track.height}p$fps", track, mux))
+            }
+        }
+    if (s.audioUrl != null) out.add(DlOption(audioLabel, null, false))
+    return out
 }
 
 private fun speedLabel(s: Float) = if (s == 1f) "Normal" else "${s.toString().removeSuffix(".0")}x"

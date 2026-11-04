@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit
 class AppDownloader : Downloader() {
 
     private val client = OkHttpClient.Builder()
+        .dns(Net.dns)
         .readTimeout(30, TimeUnit.SECONDS)
         .connectTimeout(30, TimeUnit.SECONDS)
         .build()

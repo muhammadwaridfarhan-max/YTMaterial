@@ -61,4 +61,10 @@
     <string name="sign_in_short">Masuk</string>
     <string name="signed_in">Sudah masuk dengan Google</string>
     <string name="sign_out">Keluar</string>
+    <string name="subscribe">Berlangganan</string>
+    <string name="subscribed">Berlangganan ✓</string>
+    <string name="unsubscribe">Berhenti berlangganan</string>
+    <string name="subs_empty">Belum ada langganan. Buka channel lalu ketuk Berlangganan.</string>
+    <string name="download_saved">Tersimpan: %1$s</string>
+    <string name="download_audio_only">Audio saja (M4A)</string>
 </resources>

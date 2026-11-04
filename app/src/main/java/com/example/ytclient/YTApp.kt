@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import com.example.ytclient.auth.AuthManager
 import com.example.ytclient.data.AppDownloader
+import com.example.ytclient.data.SubscriptionManager
 import com.example.ytclient.settings.AppLanguage
 import com.example.ytclient.settings.SettingsManager
 import kotlinx.coroutines.flow.first
@@ -20,6 +21,7 @@ class YTApp : Application() {
         super.onCreate()
         SettingsManager.init(this)
         AuthManager.init(this)
+        SubscriptionManager.init(this)
         val language = runBlocking { SettingsManager.settings.first() }.language
         applyLanguage(this, language)
     }

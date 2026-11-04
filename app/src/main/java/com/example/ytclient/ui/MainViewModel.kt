@@ -155,7 +155,7 @@ class MainViewModel : ViewModel() {
         channelJob?.cancel()
         channelLoadingMore = false
         channelState = UiState.Loading
-        val pager = Repository.searchPager(name)
+        val pager = Repository.channelPager(name)
         channelPager = pager
         channelJob = viewModelScope.launch {
             channelState = runCatching { pager.nextBatch() }.fold(

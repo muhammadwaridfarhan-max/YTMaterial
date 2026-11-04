@@ -58,7 +58,8 @@ fun HomeScreen(vm: MainViewModel, onPlay: (VideoItem) -> Unit, onChannelClick: (
                 modifier = Modifier.fillMaxSize(),
                 onChannelClick = onChannelClick,
                 onLoadMore = vm::loadMoreHome,
-                loadingMore = vm.homeLoadingMore
+                loadingMore = vm.homeLoadingMore,
+                bottomPadding = 100.dp
             )
         }
     }

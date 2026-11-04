@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -73,6 +74,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ytclient.R
 import com.example.ytclient.data.VideoItem
 import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.abs
@@ -120,23 +122,15 @@ fun App(vm: MainViewModel = viewModel()) {
                     onSearch = { showSearch = true },
                     onProfile = { scope.launch { pagerState.animateScrollToPage(3) } }
                 )
-            },
-            bottomBar = {
-                FloatingNavBar(
-                    tabs = tabs,
-                    selected = pagerState.currentPage,
-                    onSelect = { scope.launch { pagerState.animateScrollToPage(it) } },
-                    hazeState = hazeState,
-                    blurStrength = blurStrength,
-                    blurEnabled = blurEnabled
-                )
             }
         ) { padding ->
             Box(
                 Modifier
                     .fillMaxSize()
-                    .padding(padding)
+                    .padding(top = padding.calculateTopPadding())
             ) {
+                // Everything the floating bar should blur lives inside this source box.
+                Box(Modifier.fillMaxSize().hazeSource(hazeState)) {
                 HorizontalPager(
                     state = pagerState,
                     modifier = Modifier.fillMaxSize(),
@@ -164,17 +158,34 @@ fun App(vm: MainViewModel = viewModel()) {
                                 mainPlayer = controller,
                                 onSearch = { showSearch = true },
                                 bottomPadding = 90.dp,
+                                active = pagerState.currentPage == 1,
                                 onChannelClick = { currentChannel = it; showChannel = true }
                             )
-                            2 -> Placeholder(Icons.Filled.List, R.string.nav_subs)
+                            2 -> SubsScreen(onOpenChannel = { currentChannel = it; showChannel = true })
                             else -> YouScreen(onSignIn = { showLogin = true })
                         }
                     }
                 }
+                }
                 MiniPlayer(
                     controller = controller,
                     onExpand = { controller.expanded = true },
-                    modifier = Modifier.align(Alignment.BottomCenter)
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .navigationBarsPadding()
+                        .padding(bottom = 84.dp)
+                )
+                FloatingNavBar(
+                    tabs = tabs,
+                    selected = pagerState.currentPage,
+                    onSelect = { scope.launch { pagerState.animateScrollToPage(it) } },
+                    hazeState = hazeState,
+                    blurStrength = blurStrength,
+                    blurEnabled = blurEnabled,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .navigationBarsPadding()
+                        .padding(horizontal = 20.dp, vertical = 12.dp)
                 )
             }
         }
@@ -191,6 +202,18 @@ fun App(vm: MainViewModel = viewModel()) {
             )
         }
 
+        if (showChannel && currentChannel != null) {
+            ChannelOverlay(
+                channel = currentChannel,
+                vm = vm,
+                onClose = {
+                    showChannel = false
+                    currentChannel = null
+                },
+                onPlay = controller::open
+            )
+        }
+
         AnimatedVisibility(
             visible = controller.current != null && controller.expanded,
             enter = slideInVertically(spring(stiffness = Spring.StiffnessMediumLow)) { it } +
@@ -203,21 +226,10 @@ fun App(vm: MainViewModel = viewModel()) {
                 onMinimize = { controller.expanded = false },
                 onLoginRequest = { showLogin = true },
                 onChannelClick = {
+                    controller.expanded = false
                     currentChannel = it
                     showChannel = true
                 }
-            )
-        }
-
-        if (showChannel && currentChannel != null) {
-            ChannelOverlay(
-                channel = currentChannel,
-                vm = vm,
-                onClose = {
-                    showChannel = false
-                    currentChannel = null
-                },
-                onPlay = controller::open
             )
         }
 

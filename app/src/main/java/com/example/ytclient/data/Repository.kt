@@ -38,14 +38,21 @@ data class VideoItem(
     val isLive: Boolean
 )
 
-data class StreamTrack(val height: Int, val fps: Int, val url: String)
+data class StreamTrack(
+    val height: Int,
+    val fps: Int,
+    val url: String,
+    val ext: String = "mp4",
+    val codec: String = ""
+)
 
 data class VideoStreams(
     val isLive: Boolean,
     val hlsUrl: String?,
     val audioUrl: String?,
     val videoOnly: List<StreamTrack>,
-    val progressive: List<StreamTrack>
+    val progressive: List<StreamTrack>,
+    val audioExt: String = "m4a"
 ) {
     val heights: List<Int>
         get() = (videoOnly.map { it.height } + progressive.map { it.height })
@@ -56,7 +63,10 @@ data class VideoStreams(
  * Endless feed: walks page by page through one source (kiosk / search) and, when that source
  * runs dry, moves on to the next one so the list never hits a dead end.
  */
-class FeedPager(private val sources: List<() -> ListExtractor<out InfoItem>>) {
+class FeedPager(
+    private val sources: List<() -> ListExtractor<out InfoItem>>,
+    private val accept: (StreamInfoItem) -> Boolean = { true }
+) {
     private var index = -1
     private var current: ListExtractor<out InfoItem>? = null
     private var next: Page? = null
@@ -81,7 +91,7 @@ class FeedPager(private val sources: List<() -> ListExtractor<out InfoItem>>) {
                 if (!loadedAny && index >= sources.size - 1) throw e
                 emptyList()
             }
-            val fresh = raw.filter { it.url != null && seen.add(it.url) }
+            val fresh = raw.filter { accept(it) && it.url != null && seen.add(it.url) }
             if (fresh.isNotEmpty()) {
                 loadedAny = true
                 return@withContext fresh.map { it.toVideoItem() }
@@ -160,6 +170,16 @@ object Repository {
             .map { q -> { searchExtractor(q) } }
     )
 
+    /** Videos of one channel: search by channel name, keeping only that uploader's clips. */
+    fun channelPager(name: String): FeedPager {
+        val wanted = name.trim()
+        return FeedPager(
+            listOf(wanted, "$wanted video", "$wanted terbaru", "$wanted populer")
+                .map { q -> { searchExtractor(q) } },
+            accept = { it.uploaderName?.trim().equals(wanted, ignoreCase = true) }
+        )
+    }
+
     suspend fun home(): List<VideoItem> = withContext(Dispatchers.IO) {
         val fromKiosk = runCatching {
             val kiosk = service.kioskList.defaultKioskExtractor
@@ -217,25 +237,27 @@ object Repository {
         val videoOnly = info.videoOnlyStreams
             .filter { it.isUrl && it.deliveryMethod == DeliveryMethod.PROGRESSIVE_HTTP }
             .sortedWith(compareByDescending<VideoStream> { it.height }.thenByDescending { it.fps })
-            .map { StreamTrack(it.height, it.fps, it.content) }
+            .map { StreamTrack(it.height, it.fps, it.content, it.format?.suffix ?: "mp4", it.codec.orEmpty()) }
 
         val progressive = info.videoStreams
             .filter { it.isUrl && it.deliveryMethod == DeliveryMethod.PROGRESSIVE_HTTP }
             .sortedWith(compareByDescending<VideoStream> { it.height }.thenByDescending { it.fps })
-            .map { StreamTrack(it.height, it.fps, it.content) }
+            .map { StreamTrack(it.height, it.fps, it.content, it.format?.suffix ?: "mp4", it.codec.orEmpty()) }
 
-        val audio = info.audioStreams
+        val audioStream = info.audioStreams
             .filter { it.isUrl && it.deliveryMethod == DeliveryMethod.PROGRESSIVE_HTTP }
             .sortedWith(compareByDescending<AudioStream> { it.format == MediaFormat.M4A }
                 .thenByDescending { it.averageBitrate })
-            .firstOrNull()?.content
+            .firstOrNull()
+        val audio = audioStream?.content
 
         VideoStreams(
             isLive = info.streamType == StreamType.LIVE_STREAM,
             hlsUrl = info.hlsUrl?.takeIf { it.isNotBlank() },
             audioUrl = audio,
             videoOnly = videoOnly,
-            progressive = progressive
+            progressive = progressive,
+            audioExt = audioStream?.format?.suffix ?: "m4a"
         )
     }
 

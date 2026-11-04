@@ -98,6 +98,7 @@ fun ShortsScreen(
     mainPlayer: PlayerController,
     onSearch: () -> Unit,
     bottomPadding: Dp,
+    active: Boolean = true,
     onChannelClick: (String) -> Unit = {}
 ) {
     val pullToRefreshState = rememberPullToRefreshState()
@@ -137,6 +138,7 @@ fun ShortsScreen(
                     vm,
                     shorts,
                     bottomPadding,
+                    active = active,
                     onChannelClick = onChannelClick
                 )
             }
@@ -176,17 +178,20 @@ fun ShortsScreen(
     }
 
     // LaunchedEffect for shorts loading
-    LaunchedEffect(Unit) {
-        mainPlayer.player.pause()
-        vm.loadShorts()
+    // Load the feed early, but only play/pause according to whether the tab is on screen:
+    // the pager pre-composes this page while Home is showing, which used to start Shorts audio there.
+    LaunchedEffect(Unit) { vm.loadShorts() }
+    LaunchedEffect(active) {
+        if (active) mainPlayer.player.pause() else shorts.pause()
     }
+    val activeNow by androidx.compose.runtime.rememberUpdatedState(active)
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_PAUSE -> shorts.pause()
-                Lifecycle.Event.ON_RESUME -> shorts.resume()
+                Lifecycle.Event.ON_RESUME -> if (activeNow) shorts.resume()
                 else -> Unit
             }
         }
@@ -204,6 +209,7 @@ private fun ShortsPager(
     vm: MainViewModel,
     shorts: ShortsPlayer,
     bottomPadding: Dp,
+    active: Boolean,
     onChannelClick: (String) -> Unit
 ) {
     val latest by rememberUpdatedState(items)
@@ -211,7 +217,8 @@ private fun ShortsPager(
         initialPage = vm.shortsIndex.coerceIn(0, items.lastIndex)
     ) { latest.size }
 
-    LaunchedEffect(pagerState) {
+    LaunchedEffect(pagerState, active) {
+        if (!active) return@LaunchedEffect
         snapshotFlow { pagerState.settledPage }.collect { page ->
             val list = latest
             if (page !in list.indices) return@collect

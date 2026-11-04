@@ -81,7 +81,8 @@ fun YouScreen(onSignIn: () -> Unit = {}) {
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .padding(16.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 100.dp)
     ) {
         item {
             Text(
@@ -562,7 +563,8 @@ private fun BlurDialog(
         text = {
             Column {
                 Text(
-                    text = if (value <= 12) stringResource(R.string.blur_light) else stringResource(R.string.blur_heavy),
+                    text = "${value.roundToInt()}  ·  " +
+                        if (value <= 12) stringResource(R.string.blur_light) else stringResource(R.string.blur_heavy),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

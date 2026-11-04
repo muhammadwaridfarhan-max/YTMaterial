@@ -73,4 +73,10 @@
     <string name="sign_in_short">Sign in</string>
     <string name="signed_in">Signed in with Google</string>
     <string name="sign_out">Sign out</string>
+    <string name="subscribe">Subscribe</string>
+    <string name="subscribed">Subscribed</string>
+    <string name="unsubscribe">Unsubscribe</string>
+    <string name="subs_empty">No subscriptions yet. Open a channel and tap Subscribe.</string>
+    <string name="download_saved">Saved: %1$s</string>
+    <string name="download_audio_only">Audio only (M4A)</string>
 </resources>

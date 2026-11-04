@@ -1,5 +1,6 @@
 package com.example.ytclient.auth
 
+import com.example.ytclient.data.Net
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -37,6 +38,7 @@ object DeviceCodeAuth {
     private const val UA = "Mozilla/5.0 (ChromiumStylePlatform) Cobalt/Version"
 
     private val client = OkHttpClient.Builder()
+        .dns(Net.dns)
         .connectTimeout(20, TimeUnit.SECONDS)
         .readTimeout(20, TimeUnit.SECONDS)
         .build()
