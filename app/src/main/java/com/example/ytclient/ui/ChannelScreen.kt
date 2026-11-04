@@ -74,6 +74,7 @@ fun ChannelScreen(
     val state = vm.channelState ?: UiState.Loading
     val loaded = (state as? UiState.Success)?.items.orEmpty()
     val avatar = loaded.firstOrNull { !it.channelAvatar.isNullOrBlank() }?.channelAvatar
+    val banner = loaded.firstOrNull { !it.thumbnail.isNullOrBlank() }?.thumbnail
     val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 72.dp
     val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp
 
@@ -94,6 +95,7 @@ fun ChannelScreen(
                     ChannelHeader(
                         name = channel,
                         avatar = avatar,
+                        banner = banner,
                         count = loaded.size,
                         subscribed = subscribed,
                         onToggle = { scope.launch { SubscriptionManager.toggle(channel) } }
@@ -146,39 +148,77 @@ fun ChannelScreen(
 private fun ChannelHeader(
     name: String,
     avatar: String?,
+    banner: String?,
     count: Int,
     subscribed: Boolean,
     onToggle: () -> Unit
 ) {
-    val pop by animateFloatAsState(
-        targetValue = if (avatar != null) 1f else 0.85f,
+    val bannerAlpha by animateFloatAsState(
+        targetValue = if (banner != null) 1f else 0f,
         animationSpec = spring(dampingRatio = 0.45f, stiffness = Spring.StiffnessLow),
-        label = "avatarPop"
+        label = "bannerAlpha"
     )
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(28.dp))
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
-                        MaterialTheme.colorScheme.surface
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // Banner backdrop: full-width cover with a bottom gradient to keep the name readable.
+        Box(modifier = Modifier.fillMaxWidth().height(140.dp)) {
+            if (banner != null) {
+                AsyncImage(
+                    model = banner,
+                    contentDescription = name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f))
+                )
+            }
+            Box(
+                modifier = Modifier.fillMaxSize().background(
+                    Brush.verticalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.background.copy(alpha = 0.1f),
+                            MaterialTheme.colorScheme.background.copy(alpha = 0.5f),
+                            MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+                        )
                     )
                 )
             )
-            .padding(16.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (banner == null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(12.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)),
+                    contentAlignment = Alignment.TopStart
+                ) {
+                    Text(
+                        name.trim().take(1).uppercase(),
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+        }
+
+        // Avatar + name + stats card.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Box(
-                Modifier
-                    .size(80.dp)
-                    .graphicsLayer {
-                        scaleX = pop
-                        scaleY = pop
-                    }
+                modifier = Modifier
+                    .size(48.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                    .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
                 if (avatar != null) {
@@ -191,44 +231,58 @@ private fun ChannelHeader(
                 } else {
                     Text(
                         name.trim().take(1).uppercase(),
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
             }
-            Spacer(Modifier.width(16.dp))
-            Column(Modifier.weight(1f)) {
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     name,
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    maxLines = 2,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                if (count > 0) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 2.dp)
+                ) {
                     Text(
                         stringResource(R.string.channel_videos, count),
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
         }
-        Spacer(Modifier.height(16.dp))
+
+        Spacer(Modifier.height(12.dp))
         if (subscribed) {
             OutlinedButton(
                 onClick = onToggle,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)
-            ) { Text(stringResource(R.string.subscribed)) }
+            ) {
+                Text(
+                    stringResource(R.string.subscribed),
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+            }
         } else {
             Button(
                 onClick = onToggle,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)
-            ) { Text(stringResource(R.string.subscribe)) }
+            ) {
+                Text(
+                    stringResource(R.string.subscribe),
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+            }
         }
     }
 }

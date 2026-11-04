@@ -68,4 +68,8 @@
     <string name="download_audio_only">Audio saja (M4A)</string>
     <string name="channel_videos">%1$d video dimuat</string>
     <string name="open_channel">Buka channel</string>
+    <string name="sync_profile">Sinkronkan foto profil</string>
+    <string name="syncing">Sinkronisasi…</string>
+    <string name="clear">Hapus</string>
+    <string name="google_feed_label">Pakai feed Google</string>
 </resources>

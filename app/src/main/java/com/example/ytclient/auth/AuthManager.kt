@@ -24,6 +24,8 @@ object AuthManager {
     }
 
     val signedIn: Flow<Boolean> by lazy { store.data.map { it[KEY_REFRESH] != null } }
+    /** The YouTube API bearer token, if a Google sign-in happened. */
+    val accessToken: Flow<String?> by lazy { store.data.map { it[KEY_ACCESS] } }
 
     suspend fun save(tokens: Tokens) {
         store.edit {
@@ -32,6 +34,9 @@ object AuthManager {
             it[KEY_EXPIRES_AT] = System.currentTimeMillis() + tokens.expiresInSec * 1000L
         }
     }
+
+    /** Current access token for YouTube API calls (returns null when not signed in). */
+    suspend fun getAccessToken(): String? = store.data.map { it[KEY_ACCESS] }.first()
 
     suspend fun signOut() {
         store.edit {

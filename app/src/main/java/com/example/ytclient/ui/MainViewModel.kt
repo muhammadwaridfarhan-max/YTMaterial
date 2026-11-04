@@ -7,8 +7,10 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ytclient.data.FeedPager
+import com.example.ytclient.data.GoogleFeed
 import com.example.ytclient.data.Repository
 import com.example.ytclient.data.VideoItem
+import com.example.ytclient.auth.AuthManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -58,6 +60,14 @@ class MainViewModel : ViewModel() {
         private set
     private var channelPager: FeedPager? = null
     private var channelJob: Job? = null
+
+    // Google-feed (signed-in account)
+    var googleFeedState by mutableStateOf<UiState?>(null)
+        private set
+    var googleFeedLoadingMore by mutableStateOf(false)
+        private set
+    private var googlePager: GoogleFeed.GoogleFeedPager? = null
+    private var googleJob: Job? = null
 
     fun loadHome() {
         selectedFilter = 0
@@ -265,6 +275,72 @@ class MainViewModel : ViewModel() {
                 onSuccess = { UiState.Success(it) },
                 onFailure = { UiState.Error(it.message ?: "Gagal memuat rekomendasi") }
             )
+        }
+    }
+
+    // Google-feed (signed-in account)
+    var googleFeedState by mutableStateOf<UiState?>(null)
+        private set
+    var googleFeedLoadingMore by mutableStateOf(false)
+        private set
+    private var googlePager: GoogleFeed.GoogleFeedPager? = null
+    private var googleJob: Job? = null
+    private var googleToken by mutableStateOf<String?>(null)
+
+    fun loadGoogleFeed(accessToken: String) {
+        googleJob?.cancel()
+        googleFeedLoadingMore = false
+        googleToken = accessToken
+        googleFeedState = UiState.Loading
+        val pager = GoogleFeed.GoogleFeedPager(
+            sources = listOf(
+                { GoogleFeed.subscriptions(accessToken) },
+                { GoogleFeed.likedVideos(accessToken) }
+            )
+        )
+        googlePager = pager
+        googleJob = viewModelScope.launch {
+            googleFeedState = runCatching { pager.nextBatch(accessToken) }.fold(
+                onSuccess = { UiState.Success(it) },
+                onFailure = { UiState.Error(it.message ?: "Gagal memuat Google feed") }
+            )
+        }
+    }
+
+    fun loadMoreGoogleFeed() {
+        val pager = googlePager ?: return
+        if (googleFeedLoadingMore || pager.exhausted || googleFeedState !is UiState.Success) return
+        googleFeedLoadingMore = true
+        val token = googleToken ?: return
+        googleJob = viewModelScope.launch {
+            try {
+                val fresh = runCatching { pager.nextBatch(token) }.getOrDefault(emptyList())
+                val latest = (googleFeedState as? UiState.Success)?.items
+                if (googlePager === pager && latest != null && fresh.isNotEmpty()) {
+                    googleFeedState = UiState.Success(latest + fresh)
+                }
+            } finally {
+                if (googlePager === pager) googleFeedLoadingMore = false
+            }
+        }
+    }
+
+    var useGoogleFeed by mutableStateOf(false)
+        private set
+
+    fun setUseGoogleFeed(enabled: Boolean) {
+        useGoogleFeed = enabled
+        if (enabled) {
+            val token = AuthManager.getAccessToken()
+            if (!token.isNullOrBlank()) {
+                loadGoogleFeed(token)
+            }
+        } else {
+            googleFeedState = null
+            googleFeedLoadingMore = false
+            googlePager = null
+            googleJob?.cancel()
+            loadHome()
         }
     }
 

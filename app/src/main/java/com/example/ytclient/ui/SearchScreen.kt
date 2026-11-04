@@ -35,6 +35,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.mutableStateOf
 import com.example.ytclient.R
 import com.example.ytclient.data.VideoItem
 
@@ -100,6 +104,58 @@ fun SearchScreen(
                     Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.search))
                 }
             }
+            HorizontalDivider()
+
+            // MeeTube-style search chips: quick suggested searches that fill the query.
+            val suggestions = listOf(
+                "musik populer", "trending viral", "film pendek", "game umum",
+                "olahraga", "kuliner", "tutorial", "komedi"
+            )
+            val query by remember { mutableStateOf(vm.query) }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                suggestions.forEach { term ->
+                    val selected = query == term
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(if (selected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.surfaceVariant)
+                            .clickable {
+                                vm.query = term
+                                vm.runSearch()
+                            }
+                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            term,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (selected) MaterialTheme.colorScheme.onPrimary
+                            else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                if (vm.query.isNotEmpty()) {
+                    TextButton(
+                        onClick = {
+                            vm.query = ""
+                            vm.runSearch()
+                        },
+                        modifier = Modifier.padding(start = 4.dp)
+                    ) {
+                        Text(
+                            stringResource(R.string.clear),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
             HorizontalDivider()
 
             val state = vm.searchState

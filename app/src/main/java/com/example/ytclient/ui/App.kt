@@ -135,11 +135,15 @@ fun App(vm: MainViewModel = viewModel()) {
     )
     val insets = FloatingInsets(statusTop + 72.dp, navBottom + 92.dp + miniExtra)
 
-    // Floating top bar: slides away while scrolling down, springs back on scroll up.
+    // Floating top bar: shrinks as the feed scrolls; springs back on scroll up.
     var topBarHidden by remember { mutableStateOf(false) }
+    var scrollOffset by remember { mutableFloatStateOf(0f) }
     val hideConnection = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                // Accumulate downward scroll so the top bar can "menciut" (shrink). Clamp at 0 so
+                // a quick upward flick doesn't make the bar stretch taller than 80 dp.
+                scrollOffset = (scrollOffset + available.y).coerceAtLeast(0f)
                 if (available.y < -12f) topBarHidden = true
                 else if (available.y > 12f) topBarHidden = false
                 return Offset.Zero
@@ -210,6 +214,7 @@ fun App(vm: MainViewModel = viewModel()) {
                     hazeState = hazeState,
                     blurStrength = blurStrength,
                     blurEnabled = blurEnabled,
+                    scrollOffset = scrollOffset,
                     modifier = Modifier.align(Alignment.TopCenter)
                 )
                 MiniPlayer(
