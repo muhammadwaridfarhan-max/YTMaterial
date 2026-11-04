@@ -65,7 +65,11 @@ fun SubsScreen(onOpenChannel: (String) -> Unit) {
     } else {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 110.dp)
+            contentPadding = PaddingValues(
+                start = 16.dp, end = 8.dp,
+                top = LocalFloatingInsets.current.top + 8.dp,
+                bottom = LocalFloatingInsets.current.bottom
+            )
         ) {
             items(channels, key = { it }) { name ->
                 Row(

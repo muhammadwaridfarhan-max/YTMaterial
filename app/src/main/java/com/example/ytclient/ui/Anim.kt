@@ -40,3 +40,11 @@ fun Modifier.pressScale(source: InteractionSource, pressedScale: Float = 0.95f):
         scaleY = scale
     }
 }
+
+/** Space the floating bars take, so scrolling content can pad itself clear of them. */
+@androidx.compose.runtime.Immutable
+data class FloatingInsets(val top: androidx.compose.ui.unit.Dp, val bottom: androidx.compose.ui.unit.Dp)
+
+val LocalFloatingInsets = androidx.compose.runtime.staticCompositionLocalOf {
+    FloatingInsets(androidx.compose.ui.unit.Dp(0f), androidx.compose.ui.unit.Dp(0f))
+}

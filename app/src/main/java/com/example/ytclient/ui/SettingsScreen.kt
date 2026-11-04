@@ -82,7 +82,10 @@ fun YouScreen(onSignIn: () -> Unit = {}) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 100.dp)
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+            top = LocalFloatingInsets.current.top,
+            bottom = LocalFloatingInsets.current.bottom
+        )
     ) {
         item {
             Text(

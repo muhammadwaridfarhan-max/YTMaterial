@@ -29,7 +29,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -51,6 +55,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -115,64 +125,103 @@ fun App(vm: MainViewModel = viewModel()) {
         scope.launch { pagerState.animateScrollToPage(0) }
     }
 
-    Box(Modifier.fillMaxSize()) {
-        Scaffold(
-            topBar = {
-                YTTopBar(
-                    onSearch = { showSearch = true },
-                    onProfile = { scope.launch { pagerState.animateScrollToPage(3) } }
-                )
+    val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val miniVisible = controller.current != null && !controller.expanded
+    val miniExtra by androidx.compose.animation.core.animateDpAsState(
+        targetValue = if (miniVisible) 76.dp else 0.dp,
+        animationSpec = spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow),
+        label = "miniInset"
+    )
+    val insets = FloatingInsets(statusTop + 72.dp, navBottom + 92.dp + miniExtra)
+
+    // Floating top bar: slides away while scrolling down, springs back on scroll up.
+    var topBarHidden by remember { mutableStateOf(false) }
+    val hideConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (available.y < -12f) topBarHidden = true
+                else if (available.y > 12f) topBarHidden = false
+                return Offset.Zero
             }
-        ) { padding ->
+        }
+    }
+    androidx.compose.runtime.LaunchedEffect(pagerState.currentPage) { topBarHidden = false }
+    // Warm the Shorts feed in the background; the page itself is only composed when you open it.
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(1200)
+        vm.loadShorts()
+    }
+
+    Box(Modifier.fillMaxSize()) {
+        CompositionLocalProvider(LocalFloatingInsets provides insets) {
             Box(
                 Modifier
                     .fillMaxSize()
-                    .padding(top = padding.calculateTopPadding())
+                    .background(MaterialTheme.colorScheme.surface)
             ) {
-                // Everything the floating bar should blur lives inside this source box.
-                Box(Modifier.fillMaxSize().hazeSource(hazeState)) {
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier.fillMaxSize(),
-                    beyondViewportPageCount = 1
-                ) { page ->
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .graphicsLayer {
-                                val offset = abs(
-                                    (pagerState.currentPage - page) +
-                                            pagerState.currentPageOffsetFraction
-                                ).coerceIn(0f, 1f)
-                                alpha = 1f - 0.4f * offset
-                                val s = 1f - 0.06f * offset
-                                scaleX = s
-                                scaleY = s
+                // Everything the floating bars blur lives inside this source box.
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .nestedScroll(hideConnection)
+                        .hazeSource(hazeState)
+                ) {
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.fillMaxSize(),
+                        beyondViewportPageCount = 0
+                    ) { page ->
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .graphicsLayer {
+                                    val offset = abs(
+                                        (pagerState.currentPage - page) +
+                                                pagerState.currentPageOffsetFraction
+                                    ).coerceIn(0f, 1f)
+                                    alpha = 1f - 0.4f * offset
+                                    val s = 1f - 0.06f * offset
+                                    scaleX = s
+                                    scaleY = s
+                                }
+                        ) {
+                            when (page) {
+                                0 -> HomeScreen(vm, onPlay = controller::open, onChannelClick = { currentChannel = it; showChannel = true })
+                                1 -> ShortsScreen(
+                                    vm = vm,
+                                    shorts = shorts,
+                                    mainPlayer = controller,
+                                    onSearch = { showSearch = true },
+                                    bottomPadding = 90.dp,
+                                    active = pagerState.currentPage == 1,
+                                    onChannelClick = { currentChannel = it; showChannel = true }
+                                )
+                                2 -> SubsScreen(onOpenChannel = { currentChannel = it; showChannel = true })
+                                else -> YouScreen(onSignIn = { showLogin = true })
                             }
-                    ) {
-                        when (page) {
-                            0 -> HomeScreen(vm, onPlay = controller::open, onChannelClick = { currentChannel = it; showChannel = true })
-                            1 -> ShortsScreen(
-                                vm = vm,
-                                shorts = shorts,
-                                mainPlayer = controller,
-                                onSearch = { showSearch = true },
-                                bottomPadding = 90.dp,
-                                active = pagerState.currentPage == 1,
-                                onChannelClick = { currentChannel = it; showChannel = true }
-                            )
-                            2 -> SubsScreen(onOpenChannel = { currentChannel = it; showChannel = true })
-                            else -> YouScreen(onSignIn = { showLogin = true })
                         }
                     }
                 }
-                }
+                FloatingTopBar(
+                    visible = !topBarHidden && pagerState.currentPage != 1,
+                    onSearch = { showSearch = true },
+                    onProfile = { scope.launch { pagerState.animateScrollToPage(3) } },
+                    hazeState = hazeState,
+                    blurStrength = blurStrength,
+                    blurEnabled = blurEnabled,
+                    modifier = Modifier.align(Alignment.TopCenter)
+                )
                 MiniPlayer(
                     controller = controller,
                     onExpand = { controller.expanded = true },
+                    hazeState = hazeState,
+                    blurStrength = blurStrength,
+                    blurEnabled = blurEnabled,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .navigationBarsPadding()
+                        .padding(horizontal = 20.dp)
                         .padding(bottom = 84.dp)
                 )
                 FloatingNavBar(
@@ -216,9 +265,12 @@ fun App(vm: MainViewModel = viewModel()) {
 
         AnimatedVisibility(
             visible = controller.current != null && controller.expanded,
-            enter = slideInVertically(spring(stiffness = Spring.StiffnessMediumLow)) { it } +
-                    fadeIn(tween(200)),
-            exit = slideOutVertically(tween(260)) { it } + fadeOut(tween(220))
+            enter = slideInVertically(
+                spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow)
+            ) { it } + fadeIn(tween(160)),
+            exit = slideOutVertically(
+                spring(dampingRatio = 1f, stiffness = Spring.StiffnessMedium)
+            ) { it } + fadeOut(tween(200))
         ) {
             PlayerScreen(
                 controller = controller,

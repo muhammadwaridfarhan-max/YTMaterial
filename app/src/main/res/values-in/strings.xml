@@ -66,4 +66,5 @@
     <string name="subs_empty">Belum ada langganan. Buka channel lalu ketuk Berlangganan.</string>
     <string name="download_saved">Tersimpan: %1$s</string>
     <string name="download_audio_only">Audio saja (M4A)</string>
+    <string name="channel_videos">%1$d video dimuat</string>
 </resources>
