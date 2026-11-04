@@ -20,7 +20,7 @@
     <string name="live">LIVE</string>
     <string name="coming_soon">Segera hadir</string>
     <string name="login_later">Login Google menyusul di tahap berikutnya.</string>
-    <string name="subscribe">Subscribe</string>
+    <string name="subscribe">Berlangganan</string>
     <string name="like">Suka</string>
     <string name="share">Bagikan</string>
     <string name="download">Unduh</string>
@@ -61,7 +61,6 @@
     <string name="sign_in_short">Masuk</string>
     <string name="signed_in">Sudah masuk dengan Google</string>
     <string name="sign_out">Keluar</string>
-    <string name="subscribe">Berlangganan</string>
     <string name="subscribed">Berlangganan ✓</string>
     <string name="unsubscribe">Berhenti berlangganan</string>
     <string name="subs_empty">Belum ada langganan. Buka channel lalu ketuk Berlangganan.</string>
