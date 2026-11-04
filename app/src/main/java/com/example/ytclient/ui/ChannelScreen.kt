@@ -170,7 +170,7 @@ private fun ChannelHeader(
     ) {
         Box(
             Modifier
-                .size(88.dp)
+                .size(108.dp)
                 .graphicsLayer {
                     scaleX = pop
                     scaleY = pop
@@ -189,7 +189,7 @@ private fun ChannelHeader(
             } else {
                 Text(
                     name.trim().take(1).uppercase(),
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = MaterialTheme.typography.headlineLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

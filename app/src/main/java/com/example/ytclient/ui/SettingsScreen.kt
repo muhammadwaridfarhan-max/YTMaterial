@@ -77,11 +77,12 @@ fun YouScreen(onSignIn: () -> Unit = {}) {
     val scope = rememberCoroutineScope()
     val settings by SettingsManager.settings.collectAsState(initial = AppSettings())
     var dialog by remember { mutableStateOf<SettingsDialog?>(null) }
+    val signedIn by AuthManager.signedIn.collectAsState(initial = false)
 
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(horizontal = 16.dp),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(
             top = LocalFloatingInsets.current.top,
             bottom = LocalFloatingInsets.current.bottom
@@ -93,7 +94,10 @@ fun YouScreen(onSignIn: () -> Unit = {}) {
                 style = MaterialTheme.typography.headlineSmall
             )
             Spacer(Modifier.height(12.dp))
-            val signedIn by AuthManager.signedIn.collectAsState(initial = false)
+            // Google profile (photo + name) — syncs from Credential Manager
+            AccountCard()
+            Spacer(Modifier.height(12.dp))
+            // YouTube account (device-code / TV login) for feed & subs sync
             Surface(
                 shape = RoundedCornerShape(24.dp),
                 color = MaterialTheme.colorScheme.primaryContainer,

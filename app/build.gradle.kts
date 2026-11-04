@@ -12,8 +12,8 @@ android {
         applicationId = "com.example.ytclient"
         minSdk = 26
         targetSdk = 36
-        versionCode = 5
-        versionName = "0.5.0"
+        versionCode = 6
+        versionName = "0.6.0"
 
         // OAuth *Web* client ID for "Sign in with Google" (see README steps). Empty = login disabled.
         val webClientId = (project.findProperty("GOOGLE_WEB_CLIENT_ID") as String?)

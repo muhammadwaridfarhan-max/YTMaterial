@@ -135,12 +135,14 @@ fun App(vm: MainViewModel = viewModel()) {
     )
     val insets = FloatingInsets(statusTop + 72.dp, navBottom + 92.dp + miniExtra)
 
-    // Floating top bar: slides away while scrolling down, springs back on scroll up.
+    // Floating top bar: slides away / shrinks while scrolling down, springs back on scroll up.
+    // On account (You) tab the bar is more sticky so it only shrinks after stronger scroll.
     var topBarHidden by remember { mutableStateOf(false) }
     val hideConnection = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                if (available.y < -12f) topBarHidden = true
+                val threshold = if (pagerState.currentPage == 3) 28f else 12f
+                if (available.y < -threshold) topBarHidden = true
                 else if (available.y > 12f) topBarHidden = false
                 return Offset.Zero
             }

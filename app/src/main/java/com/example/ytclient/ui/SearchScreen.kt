@@ -2,6 +2,14 @@
 
 package com.example.ytclient.ui
 
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Surface
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,7 +26,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -102,9 +109,35 @@ fun SearchScreen(
             }
             HorizontalDivider()
 
+            // Quick search chips (MeTube-style)
+            val chips = listOf(
+                "Trending", "Musik", "Gaming", "Berita", "Tutorial",
+                "Shorts", "Live", "Podcast", "Film", "Olahraga"
+            )
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                chips.forEach { chip ->
+                    FilterChip(
+                        selected = vm.query.equals(chip, ignoreCase = true),
+                        onClick = {
+                            vm.query = chip
+                            keyboard?.hide()
+                            vm.runSearch()
+                        },
+                        label = { Text(chip) },
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                }
+            }
+
             val state = vm.searchState
             if (state == null) {
-                androidx.compose.foundation.layout.Box(
+                Box(
                     Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
