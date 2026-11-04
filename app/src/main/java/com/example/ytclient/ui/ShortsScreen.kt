@@ -269,7 +269,7 @@ private fun ShortPage(
             .fillMaxSize()
             .background(Color.Black)
             .pointerInput(isActive) {
-                androidx.compose.foundation.gestures.detectTapGestures(
+                detectTapGestures(
                     onTap = { if (isActive) shorts.togglePlay() },
                     onDoubleTap = {
                         if (isActive) {
