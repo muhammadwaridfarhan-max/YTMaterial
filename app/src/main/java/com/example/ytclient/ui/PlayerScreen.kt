@@ -98,6 +98,9 @@ import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
 import com.example.ytclient.R
 import com.example.ytclient.data.Repository
+import com.example.ytclient.data.SubscriptionManager
+import com.example.ytclient.ui.components.VideoRow
+import androidx.compose.runtime.collectAsState
 import com.example.ytclient.data.StreamTrack
 import com.example.ytclient.data.VideoDownloader
 import com.example.ytclient.data.VideoStreams
@@ -129,6 +132,9 @@ fun PlayerScreen(
 ) {
     val item = controller.current ?: return
     val context = LocalContext.current
+    val subs by SubscriptionManager.channels.collectAsState(initial = emptyList())
+    val subscribedNow = item.channel in subs
+    val subScope = rememberCoroutineScope()
     var showQualitySheet by remember { mutableStateOf(false) }
     var showSpeedSheet by remember { mutableStateOf(false) }
     var showDownloadSheet by remember { mutableStateOf(false) }
@@ -239,8 +245,18 @@ fun PlayerScreen(
                 LazyColumn(Modifier.fillMaxSize()) {
                     item {
                         Column(Modifier.padding(16.dp)) {
-                            Text(item.title, style = MaterialTheme.typography.titleMedium)
-                            Spacer(Modifier.height(12.dp))
+                            Text(
+                                item.title,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                            )
+                            Spacer(Modifier.height(6.dp))
+                            Text(
+                                listOfNotNull(formatViews(item.views), item.uploaded).joinToString(" • "),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(Modifier.height(14.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
@@ -272,24 +288,19 @@ fun PlayerScreen(
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
-                                        formatViews(item.views)?.let {
-                                            Text(
-                                                it,
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
                                     }
                                 }
                                 Button(
-                                    onClick = onLoginRequest,
-                                    shape = RoundedCornerShape(20.dp),
+                                    onClick = {
+                                        subScope.launch { SubscriptionManager.toggle(item.channel) }
+                                    },
+                                    shape = CircleShape,
                                     colors = androidx.compose.material3.ButtonDefaults.buttonColors(
                                         containerColor = MaterialTheme.colorScheme.onSurface,
                                         contentColor = MaterialTheme.colorScheme.surface
                                     )
                                 ) {
-                                    Text(stringResource(R.string.subscribe))
+                                    Text(stringResource(if (subscribedNow) R.string.subscribed else R.string.subscribe))
                                 }
                             }
                             Spacer(Modifier.height(12.dp))
@@ -298,16 +309,19 @@ fun PlayerScreen(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 AssistChip(
+                                    shape = CircleShape,
                                     onClick = { },
                                     label = { Text(stringResource(R.string.like)) },
                                     leadingIcon = { Icon(Icons.Filled.ThumbUp, contentDescription = null) }
                                 )
                                 AssistChip(
+                                    shape = CircleShape,
                                     onClick = { },
                                     label = { Text(stringResource(R.string.share)) },
                                     leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) }
                                 )
                                 AssistChip(
+                                    shape = CircleShape,
                                     onClick = { showDownloadSheet = true },
                                     label = { Text(stringResource(R.string.download)) },
                                     leadingIcon = { Icon(Icons.Filled.Download, contentDescription = null) }
@@ -351,11 +365,12 @@ fun PlayerScreen(
                         }
 
                         is UiState.Success -> items(rs.items, key = { it.url }) { video ->
-                            VideoCard(
+                            VideoRow(
                                 video,
                                 onClick = { controller.open(video) },
-                                onChannelClick = { },
-                                modifier = Modifier.animateItem()
+                                modifier = Modifier
+                                    .padding(horizontal = 16.dp, vertical = 6.dp)
+                                    .animateItem()
                             )
                         }
                     }

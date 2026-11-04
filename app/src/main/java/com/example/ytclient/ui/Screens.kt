@@ -71,7 +71,7 @@ fun VideoList(
                     start = 12.dp, end = 12.dp,
                     top = topPadding + 4.dp, bottom = 8.dp + bottomPadding
                 ),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 if (header != null) {
                     item(key = "header", contentType = "header") { header() }

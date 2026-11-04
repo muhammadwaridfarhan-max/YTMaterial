@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
@@ -40,8 +42,8 @@ import com.example.ytclient.R
 import dev.chrisbanes.haze.HazeState
 
 /**
- * Floating glass top bar. Springs in with a little overshoot, slides away on scroll-down and
- * comes back on scroll-up (the visibility flag is driven from App).
+ * Floating top bar in the MeeTube style: a glass title pill on the left and round glass buttons on
+ * the right, instead of one full-width bar. Springs in, slides away while scrolling down.
  */
 @Composable
 fun FloatingTopBar(
@@ -63,61 +65,86 @@ fun FloatingTopBar(
             spring(stiffness = Spring.StiffnessMedium, visibilityThreshold = IntOffset(1, 1))
         ) { -it * 2 } + fadeOut(tween(90))
     ) {
-        Box(
+        Row(
             Modifier
                 .statusBarsPadding()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
-                .fillMaxWidth()
-                .glass(
-                    hazeState,
-                    RoundedCornerShape(28.dp),
-                    elevation = 10.dp,
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Title pill
+            Box(
+                Modifier.glass(
+                    hazeState, CircleShape,
+                    elevation = 8.dp,
                     blurRadius = blurStrength.dp,
                     blurEnabled = blurEnabled
                 )
-        ) {
-            GlassContent {
-                val onSurface = MaterialTheme.colorScheme.onSurface
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .padding(start = 14.dp, end = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
+            ) {
+                GlassContent {
+                    Row(
                         Modifier
-                            .size(30.dp)
-                            .clip(RoundedCornerShape(9.dp))
-                            .background(Color(0xFFFF0000)),
-                        contentAlignment = Alignment.Center
+                            .height(48.dp)
+                            .padding(horizontal = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color.White)
-                    }
-                    Spacer(Modifier.width(10.dp))
-                    Text(
-                        stringResource(R.string.app_name),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = onSurface
-                    )
-                    Spacer(Modifier.weight(1f))
-                    IconButton(onClick = onSearch) {
-                        Icon(
-                            Icons.Filled.Search,
-                            contentDescription = stringResource(R.string.search),
-                            tint = onSurface
-                        )
-                    }
-                    IconButton(onClick = onProfile) {
-                        Icon(
-                            Icons.Filled.Person,
-                            contentDescription = stringResource(R.string.nav_you),
-                            tint = onSurface
+                        Box(
+                            Modifier
+                                .size(28.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFFFF0000)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Filled.PlayArrow,
+                                contentDescription = null,
+                                tint = Color.White
+                            )
+                        }
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            stringResource(R.string.app_name),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
             }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                GlassCircleButton(hazeState, blurStrength, blurEnabled, onSearch) {
+                    Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.search))
+                }
+                Spacer(Modifier.width(8.dp))
+                GlassCircleButton(hazeState, blurStrength, blurEnabled, onProfile) {
+                    Icon(Icons.Filled.Person, contentDescription = stringResource(R.string.nav_you))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GlassCircleButton(
+    hazeState: HazeState?,
+    blurStrength: Int,
+    blurEnabled: Boolean,
+    onClick: () -> Unit,
+    icon: @Composable () -> Unit
+) {
+    Box(
+        Modifier
+            .size(48.dp)
+            .glass(
+                hazeState, CircleShape,
+                elevation = 8.dp,
+                blurRadius = blurStrength.dp,
+                blurEnabled = blurEnabled
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        GlassContent {
+            IconButton(onClick = onClick) { icon() }
         }
     }
 }

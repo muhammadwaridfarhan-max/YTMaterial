@@ -1,13 +1,10 @@
 package com.example.ytclient.ui
 
 import androidx.annotation.StringRes
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -17,10 +14,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -28,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -37,10 +35,7 @@ import dev.chrisbanes.haze.HazeState
 
 data class NavTab(@StringRes val label: Int, val icon: ImageVector)
 
-/**
- * Floating pill-shaped bottom bar drawn over the content. Blur strength (Dp) and on/off come from
- * settings; the blur radius is applied directly (no spring) so dragging the slider stays cheap.
- */
+/** Floating glass tab bar (icons only, MeeTube style). The selected tab gets a Material You pill that pops in. */
 @Composable
 fun FloatingNavBar(
     tabs: List<NavTab>,
@@ -79,50 +74,45 @@ private fun NavPill(tab: NavTab, selected: Boolean, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     val t by animateFloatAsState(
         targetValue = if (selected) 1f else 0f,
-        animationSpec = tween(220),
+        animationSpec = tween(200),
         label = "pill"
+    )
+    val pop by animateFloatAsState(
+        targetValue = if (selected) 1.12f else 1f,
+        animationSpec = spring(dampingRatio = 0.45f, stiffness = Spring.StiffnessMediumLow),
+        label = "pillPop"
     )
     val interaction = remember { MutableInteractionSource() }
     val container = scheme.primaryContainer
-    val onContainer = scheme.onPrimaryContainer
+    val active = scheme.primary
     val idle = scheme.onSurfaceVariant
 
-    Row(
+    Box(
         modifier = Modifier
+            .width(68.dp)
             .height(44.dp)
-            .pressScale(interaction, 0.94f)
+            .pressScale(interaction, 0.9f)
             .clip(CircleShape)
             // alpha is read in the draw phase, so the animation does not recompose the bar
-            .drawBehind { drawRect(container.copy(alpha = t)) }
+            .drawBehind { drawRect(container.copy(alpha = 0.9f * t)) }
             .clickable(
                 interactionSource = interaction,
                 indication = null,
                 role = Role.Tab,
                 onClick = onClick
-            )
-            .padding(horizontal = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
+            ),
+        contentAlignment = Alignment.Center
     ) {
         Icon(
             tab.icon,
             contentDescription = stringResource(tab.label),
-            tint = lerp(idle, onContainer, t),
-            modifier = Modifier.size(24.dp)
+            tint = lerp(idle, active, t),
+            modifier = Modifier
+                .size(25.dp)
+                .graphicsLayer {
+                    scaleX = pop
+                    scaleY = pop
+                }
         )
-        AnimatedVisibility(
-            visible = selected,
-            enter = fadeIn(tween(180)) + expandHorizontally(tween(220)),
-            exit = fadeOut(tween(120)) + shrinkHorizontally(tween(180))
-        ) {
-            Text(
-                stringResource(tab.label),
-                color = onContainer,
-                style = MaterialTheme.typography.labelLarge,
-                maxLines = 1,
-                softWrap = false,
-                modifier = Modifier.padding(start = 8.dp)
-            )
-        }
     }
 }

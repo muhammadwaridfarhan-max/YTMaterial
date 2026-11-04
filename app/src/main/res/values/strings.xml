@@ -79,4 +79,5 @@
     <string name="download_saved">Saved: %1$s</string>
     <string name="download_audio_only">Audio only (M4A)</string>
     <string name="channel_videos">%1$d videos loaded</string>
+    <string name="open_channel">Go to channel</string>
 </resources>

@@ -2,12 +2,15 @@
 
 package com.example.ytclient.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
@@ -52,10 +55,10 @@ fun HomeScreen(vm: MainViewModel, onPlay: (VideoItem) -> Unit, onChannelClick: (
             header = {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     itemsIndexed(filters.toList()) { index, label ->
-                        FilterChip(
+                        GlassChip(
+                            label = label,
                             selected = vm.selectedFilter == index,
-                            onClick = { vm.selectFilter(index, label) },
-                            label = { Text(label) }
+                            onClick = { vm.selectFilter(index, label) }
                         )
                     }
                 }
@@ -64,4 +67,34 @@ fun HomeScreen(vm: MainViewModel, onPlay: (VideoItem) -> Unit, onChannelClick: (
             loadingMore = vm.homeLoadingMore
         )
     }
+}
+
+/** Rounded filter chip: Material You primary when selected, a soft tonal pill otherwise. */
+@Composable
+private fun GlassChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    val scheme = androidx.compose.material3.MaterialTheme.colorScheme
+    val container by androidx.compose.animation.animateColorAsState(
+        targetValue = if (selected) scheme.primary else scheme.surfaceContainerHigh,
+        animationSpec = androidx.compose.animation.core.tween(180),
+        label = "chipBg"
+    )
+    val content by androidx.compose.animation.animateColorAsState(
+        targetValue = if (selected) scheme.onPrimary else scheme.onSurface,
+        animationSpec = androidx.compose.animation.core.tween(180),
+        label = "chipFg"
+    )
+    val interaction = androidx.compose.runtime.remember {
+        androidx.compose.foundation.interaction.MutableInteractionSource()
+    }
+    Text(
+        label,
+        color = content,
+        style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
+        modifier = Modifier
+            .pressScale(interaction, 0.94f)
+            .clip(androidx.compose.foundation.shape.CircleShape)
+            .background(container)
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .padding(horizontal = 18.dp, vertical = 10.dp)
+    )
 }

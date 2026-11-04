@@ -19,14 +19,11 @@ import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
 
 /**
- * Light frosted-glass surface: blurs whatever is drawn behind it (Android 12+) and tints it with
- * Material You surface colors. Older Android versions get a plain opaque surface instead.
+ * Frosted-glass surface: blurs whatever is drawn behind it (Android 12+), tints it with Material You
+ * surface colors and adds a thin light edge. Older Android versions get a plain opaque surface.
  *
- * NOTE: a Modifier cannot set the content color, so wrap whatever you put inside a glass
- * container with [GlassContent] (otherwise Text/Icon fall back to black in dark mode).
- *
- * @param blurRadius animated blur radius in Dp (0 = no blur). Supports smooth animation.
- * @param blurEnabled whether blur is currently enabled. When false, blur animates to 0.
+ * Put the content in [GlassContent]: a bare Box does not provide a content color, which is why
+ * text turned black on the dark theme.
  */
 @Composable
 fun Modifier.glass(
@@ -37,14 +34,17 @@ fun Modifier.glass(
     blurEnabled: Boolean = true
 ): Modifier {
     val scheme = MaterialTheme.colorScheme
-    val base = this.shadow(elevation, shape).clip(shape)
-    val styled = if (hazeState != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    val base = this
+        .shadow(elevation, shape)
+        .clip(shape)
+        .border(0.8.dp, scheme.outlineVariant.copy(alpha = 0.55f), shape)
+    return if (hazeState != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         val effectiveRadius = if (blurEnabled) blurRadius else 0.dp
         base.hazeEffect(
             state = hazeState,
             style = HazeStyle(
                 backgroundColor = scheme.surface,
-                tint = HazeTint(scheme.surfaceContainerHigh.copy(alpha = 0.62f)),
+                tint = HazeTint(scheme.surfaceContainerHigh.copy(alpha = 0.72f)),
                 blurRadius = effectiveRadius,
                 noiseFactor = 0.03f
             )
@@ -52,11 +52,9 @@ fun Modifier.glass(
     } else {
         base.background(scheme.surfaceContainerHigh)
     }
-    // Thin glass edge, like MeeTube's liquid glass.
-    return styled.border(0.5.dp, scheme.outlineVariant.copy(alpha = 0.6f), shape)
 }
 
-/** Content color for anything drawn on a glass surface: always readable in light and dark. */
+/** Sets the content color for text/icons on glass to the theme's onSurface (readable in light and dark). */
 @Composable
 fun GlassContent(content: @Composable () -> Unit) {
     CompositionLocalProvider(

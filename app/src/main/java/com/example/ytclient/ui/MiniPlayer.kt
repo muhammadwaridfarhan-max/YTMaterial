@@ -15,9 +15,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -160,78 +160,72 @@ fun MiniPlayer(
                 )
         ) {
             GlassContent {
-                val scheme = MaterialTheme.colorScheme
-                Column {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .pressScale(interaction, 0.97f)
-                            .clickable(
-                                interactionSource = interaction,
-                                indication = null,
-                                onClick = onExpand
-                            )
-                            .padding(start = 10.dp, end = 4.dp, top = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        AsyncImage(
-                            model = item.thumbnail,
-                            contentDescription = item.title,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .background(scheme.surfaceContainerHigh)
+            Column {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .pressScale(interaction, 0.97f)
+                        .clickable(
+                            interactionSource = interaction,
+                            indication = null,
+                            onClick = onExpand
                         )
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(horizontal = 12.dp)
-                        ) {
-                            Text(
-                                item.title,
-                                style = MaterialTheme.typography.titleSmall,
-                                color = scheme.onSurface,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Text(
-                                item.channel,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = scheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                        FilledTonalIconButton(onClick = controller::togglePlay) {
-                            Icon(
-                                if (controller.isPlayingState) Icons.Filled.Pause
-                                else Icons.Filled.PlayArrow,
-                                contentDescription = stringResource(
-                                    if (controller.isPlayingState) R.string.pause else R.string.play
-                                )
-                            )
-                        }
-                        IconButton(onClick = controller::close) {
-                            Icon(
-                                Icons.Filled.Close,
-                                contentDescription = stringResource(R.string.close),
-                                tint = scheme.onSurface
-                            )
-                        }
-                    }
-                    WavyProgress(
-                        progress = progress,
-                        animate = controller.isPlayingState,
-                        activeColor = Color(0xFFFF2D3C),
-                        trackColor = scheme.outlineVariant,
-                        modifier = Modifier.padding(start = 18.dp, end = 18.dp, bottom = 6.dp),
-                        height = 8.dp,
-                        strokeWidth = 2.5.dp,
-                        amplitude = 1.5.dp,
-                        wavelength = 16.dp
+                        .padding(start = 10.dp, end = 4.dp, top = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    AsyncImage(
+                        model = item.thumbnail,
+                        contentDescription = item.title,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                     )
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 12.dp)
+                    ) {
+                        Text(
+                            item.title,
+                            style = MaterialTheme.typography.titleSmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            item.channel,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    FilledTonalIconButton(onClick = controller::togglePlay) {
+                        Icon(
+                            if (controller.isPlayingState) Icons.Filled.Pause
+                            else Icons.Filled.PlayArrow,
+                            contentDescription = stringResource(
+                                if (controller.isPlayingState) R.string.pause else R.string.play
+                            )
+                        )
+                    }
+                    IconButton(onClick = controller::close) {
+                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close))
+                    }
                 }
+                WavyProgress(
+                    progress = progress,
+                    animate = controller.isPlayingState,
+                    activeColor = Color(0xFFFF2D3C),
+                    trackColor = MaterialTheme.colorScheme.outlineVariant,
+                    modifier = Modifier.padding(start = 18.dp, end = 18.dp, bottom = 6.dp),
+                    height = 8.dp,
+                    strokeWidth = 2.5.dp,
+                    amplitude = 1.5.dp,
+                    wavelength = 16.dp
+                )
+            }
             }
         }
     }

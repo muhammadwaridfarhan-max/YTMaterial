@@ -105,6 +105,7 @@ fun ChannelScreen(
         }
 
         // Floating glass pill with the back button and the channel name.
+        GlassContent {
         Row(
             Modifier
                 .align(Alignment.TopCenter)
@@ -137,6 +138,7 @@ fun ChannelScreen(
             )
             Spacer(Modifier.width(16.dp))
         }
+        }
     }
 }
 
@@ -165,56 +167,68 @@ private fun ChannelHeader(
                     )
                 )
             )
-            .padding(horizontal = 16.dp, vertical = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(16.dp)
     ) {
-        Box(
-            Modifier
-                .size(88.dp)
-                .graphicsLayer {
-                    scaleX = pop
-                    scaleY = pop
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier
+                    .size(80.dp)
+                    .graphicsLayer {
+                        scaleX = pop
+                        scaleY = pop
+                    }
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                contentAlignment = Alignment.Center
+            ) {
+                if (avatar != null) {
+                    AsyncImage(
+                        model = avatar,
+                        contentDescription = name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Text(
+                        name.trim().take(1).uppercase(),
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-            contentAlignment = Alignment.Center
-        ) {
-            if (avatar != null) {
-                AsyncImage(
-                    model = avatar,
-                    contentDescription = name,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else {
+            }
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
                 Text(
-                    name.trim().take(1).uppercase(),
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    name,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
+                if (count > 0) {
+                    Text(
+                        stringResource(R.string.channel_videos, count),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
-        Spacer(Modifier.height(12.dp))
-        Text(
-            name,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )
-        if (count > 0) {
-            Text(
-                stringResource(R.string.channel_videos, count),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(16.dp))
         if (subscribed) {
-            OutlinedButton(onClick = onToggle) { Text(stringResource(R.string.subscribed)) }
+            OutlinedButton(
+                onClick = onToggle,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+            ) { Text(stringResource(R.string.subscribed)) }
         } else {
-            Button(onClick = onToggle) { Text(stringResource(R.string.subscribe)) }
+            Button(
+                onClick = onToggle,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+            ) { Text(stringResource(R.string.subscribe)) }
         }
     }
 }

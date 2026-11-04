@@ -18,13 +18,17 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,118 +46,185 @@ import com.example.ytclient.data.VideoItem
 import com.example.ytclient.ui.pressScale
 
 /**
- * MeeTube-style flat card: rounded 16:9 thumbnail, tappable channel avatar on the left, title,
- * one quiet meta line, optional overflow button. No box, no elevation; text sits directly on
- * the background. Colors come from MaterialTheme (Material You).
+ * MeeTube-style feed card: a big rounded thumbnail with no card frame, then avatar, title, meta
+ * line and a three-dot menu. Colors come from the Material You theme.
  */
 @Composable
 fun VideoCard(
     item: VideoItem,
     onClick: () -> Unit,
     onChannelClick: (String) -> Unit = {},
-    modifier: Modifier = Modifier,
-    onMore: (() -> Unit)? = null
+    modifier: Modifier = Modifier
 ) {
     val interaction = remember { MutableInteractionSource() }
-    val scheme = MaterialTheme.colorScheme
+    var menu by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    // Decode at the size it is shown (not the full-size source): much smoother scrolling.
+    val thumbRequest = remember(item.thumbnail) {
+        ImageRequest.Builder(context).data(item.thumbnail).size(640, 360).build()
+    }
+    val views = formatViews(item.views)
+    val meta = remember(item.channel, views, item.uploaded) {
+        listOfNotNull(item.channel.ifBlank { null }, views, item.uploaded).joinToString(" • ")
+    }
+
     Column(
-        modifier = modifier
+        modifier
             .fillMaxWidth()
             .pressScale(interaction, 0.97f)
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
     ) {
-        Box(Modifier.clip(RoundedCornerShape(16.dp))) {
-            val context = LocalContext.current
-            // Decode at the size it is shown (not the full-size source): much smoother scrolling.
-            val thumbRequest = remember(item.thumbnail) {
-                ImageRequest.Builder(context).data(item.thumbnail).size(640, 360).build()
-            }
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .aspectRatio(16f / 9f)
+                .clip(RoundedCornerShape(20.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+        ) {
             AsyncImage(
                 model = thumbRequest,
                 contentDescription = item.title,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(16f / 9f)
-                    .background(scheme.surfaceContainerHigh)
+                modifier = Modifier.fillMaxSize()
             )
-            if (item.isLive) {
-                Surface(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(8.dp),
-                    shape = RoundedCornerShape(6.dp),
-                    color = Color(0xFFFF0000)
-                ) {
-                    Text(
-                        stringResource(R.string.live),
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        color = Color.White,
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                }
-            } else if (item.durationSec > 0) {
-                Surface(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(8.dp),
-                    shape = RoundedCornerShape(6.dp),
-                    color = Color.Black.copy(alpha = 0.75f)
-                ) {
-                    Text(
-                        formatDuration(item.durationSec),
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        color = Color.White,
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                }
-            }
+            DurationBadge(item, Modifier.align(Alignment.BottomEnd))
         }
         Row(
-            Modifier.padding(start = 4.dp, top = 12.dp, bottom = 12.dp),
+            Modifier.padding(top = 12.dp, start = 2.dp),
             verticalAlignment = Alignment.Top
         ) {
             ChannelAvatar(
-                url = item.channelAvatar,
-                name = item.channel,
-                modifier = Modifier.clickable { onChannelClick(item.channel) }
+                item.channelAvatar,
+                item.channel,
+                Modifier.clickable { onChannelClick(item.channel) }
             )
             Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
+            Column(
+                Modifier
+                    .weight(1f)
+                    .clickable(onClick = onClick)
+            ) {
                 Text(
                     item.title,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = scheme.onSurface,
+                    fontWeight = FontWeight.SemiBold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(Modifier.height(3.dp))
-                val meta = listOfNotNull(
-                    item.channel.ifBlank { null },
-                    formatViews(item.views),
-                    item.uploaded
-                ).joinToString(" • ")
+                Spacer(Modifier.height(4.dp))
                 Text(
                     meta,
                     style = MaterialTheme.typography.bodySmall,
-                    color = scheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            if (onMore != null) {
-                IconButton(onClick = onMore, modifier = Modifier.size(32.dp)) {
+            Box {
+                IconButton(onClick = { menu = true }, modifier = Modifier.size(32.dp)) {
                     Icon(
                         Icons.Filled.MoreVert,
                         contentDescription = null,
-                        tint = scheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            } else {
-                Spacer(Modifier.width(8.dp))
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.open_channel)) },
+                        onClick = {
+                            menu = false
+                            onChannelClick(item.channel)
+                        }
+                    )
+                }
             }
+        }
+    }
+}
+
+/** Compact row for "Up next": thumbnail on the left, title and meta on the right. */
+@Composable
+fun VideoRow(item: VideoItem, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val interaction = remember { MutableInteractionSource() }
+    val context = LocalContext.current
+    val thumbRequest = remember(item.thumbnail) {
+        ImageRequest.Builder(context).data(item.thumbnail).size(400, 225).build()
+    }
+    val views = formatViews(item.views)
+    val meta = remember(item.channel, views, item.uploaded) {
+        listOfNotNull(item.channel.ifBlank { null }, views, item.uploaded).joinToString(" • ")
+    }
+    Row(
+        modifier
+            .fillMaxWidth()
+            .pressScale(interaction, 0.97f)
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+    ) {
+        Box(
+            Modifier
+                .width(168.dp)
+                .aspectRatio(16f / 9f)
+                .clip(RoundedCornerShape(14.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+        ) {
+            AsyncImage(
+                model = thumbRequest,
+                contentDescription = item.title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+            DurationBadge(item, Modifier.align(Alignment.BottomEnd))
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                item.title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                meta,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+private fun DurationBadge(item: VideoItem, modifier: Modifier) {
+    if (item.isLive) {
+        Box(
+            modifier
+                .padding(8.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color(0xFFFF0000))
+        ) {
+            Text(
+                stringResource(R.string.live),
+                modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                color = Color.White,
+                style = MaterialTheme.typography.labelSmall
+            )
+        }
+    } else if (item.durationSec > 0) {
+        Box(
+            modifier
+                .padding(8.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color.Black.copy(alpha = 0.7f))
+        ) {
+            Text(
+                formatDuration(item.durationSec),
+                modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                color = Color.White,
+                style = MaterialTheme.typography.labelSmall
+            )
         }
     }
 }
@@ -163,9 +234,9 @@ private fun ChannelAvatar(url: String?, name: String, modifier: Modifier = Modif
     val initial = name.trim().firstOrNull()?.uppercase() ?: "?"
     Box(
         modifier = modifier
-            .size(36.dp)
+            .size(40.dp)
             .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.secondaryContainer),
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh),
         contentAlignment = Alignment.Center
     ) {
         if (!url.isNullOrBlank()) {
@@ -182,7 +253,7 @@ private fun ChannelAvatar(url: String?, name: String, modifier: Modifier = Modif
         } else {
             Text(
                 initial,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.labelLarge
             )
         }
