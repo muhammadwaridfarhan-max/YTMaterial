@@ -16,8 +16,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -28,29 +30,40 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import androidx.compose.ui.platform.LocalContext
 import com.example.ytclient.R
 import com.example.ytclient.data.VideoItem
 import com.example.ytclient.ui.pressScale
 
+/**
+ * MeeTube-style flat card: rounded 16:9 thumbnail, tappable channel avatar on the left, title,
+ * one quiet meta line, optional overflow button. No box, no elevation; text sits directly on
+ * the background. Colors come from MaterialTheme (Material You).
+ */
 @Composable
-fun VideoCard(item: VideoItem, onClick: () -> Unit, onChannelClick: (String) -> Unit = {}, modifier: Modifier = Modifier) {
+fun VideoCard(
+    item: VideoItem,
+    onClick: () -> Unit,
+    onChannelClick: (String) -> Unit = {},
+    modifier: Modifier = Modifier,
+    onMore: (() -> Unit)? = null
+) {
     val interaction = remember { MutableInteractionSource() }
-    Card(
-        onClick = onClick,
+    val scheme = MaterialTheme.colorScheme
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            .pressScale(interaction, 0.96f),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        interactionSource = interaction
+            .pressScale(interaction, 0.97f)
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
     ) {
-        Box {
+        Box(Modifier.clip(RoundedCornerShape(16.dp))) {
             val context = LocalContext.current
             // Decode at the size it is shown (not the full-size source): much smoother scrolling.
             val thumbRequest = remember(item.thumbnail) {
@@ -63,7 +76,7 @@ fun VideoCard(item: VideoItem, onClick: () -> Unit, onChannelClick: (String) -> 
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(16f / 9f)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                    .background(scheme.surfaceContainerHigh)
             )
             if (item.isLive) {
                 Surface(
@@ -97,21 +110,26 @@ fun VideoCard(item: VideoItem, onClick: () -> Unit, onChannelClick: (String) -> 
                 }
             }
         }
-        Row(Modifier.padding(12.dp)) {
-            ChannelAvatar(item.channelAvatar, item.channel)
+        Row(
+            Modifier.padding(start = 4.dp, top = 12.dp, bottom = 12.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            ChannelAvatar(
+                url = item.channelAvatar,
+                name = item.channel,
+                modifier = Modifier.clickable { onChannelClick(item.channel) }
+            )
             Spacer(Modifier.width(12.dp))
-            Column(
-                Modifier
-                    .weight(1f)
-                    .clickable { onChannelClick(item.channel) }
-            ) {
+            Column(Modifier.weight(1f)) {
                 Text(
                     item.title,
                     style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = scheme.onSurface,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(3.dp))
                 val meta = listOfNotNull(
                     item.channel.ifBlank { null },
                     formatViews(item.views),
@@ -120,23 +138,34 @@ fun VideoCard(item: VideoItem, onClick: () -> Unit, onChannelClick: (String) -> 
                 Text(
                     meta,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = scheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+            }
+            if (onMore != null) {
+                IconButton(onClick = onMore, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        Icons.Filled.MoreVert,
+                        contentDescription = null,
+                        tint = scheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                Spacer(Modifier.width(8.dp))
             }
         }
     }
 }
 
 @Composable
-private fun ChannelAvatar(url: String?, name: String) {
+private fun ChannelAvatar(url: String?, name: String, modifier: Modifier = Modifier) {
     val initial = name.trim().firstOrNull()?.uppercase() ?: "?"
     Box(
-        modifier = Modifier
+        modifier = modifier
             .size(36.dp)
             .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+            .background(MaterialTheme.colorScheme.secondaryContainer),
         contentAlignment = Alignment.Center
     ) {
         if (!url.isNullOrBlank()) {
@@ -153,7 +182,7 @@ private fun ChannelAvatar(url: String?, name: String) {
         } else {
             Text(
                 initial,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
                 style = MaterialTheme.typography.labelLarge
             )
         }

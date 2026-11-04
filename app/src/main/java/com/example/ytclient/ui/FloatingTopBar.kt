@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
@@ -77,34 +76,46 @@ fun FloatingTopBar(
                     blurEnabled = blurEnabled
                 )
         ) {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .padding(start = 14.dp, end = 6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
+            GlassContent {
+                val onSurface = MaterialTheme.colorScheme.onSurface
+                Row(
                     Modifier
-                        .size(30.dp)
-                        .clip(RoundedCornerShape(9.dp))
-                        .background(Color(0xFFFF0000)),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .padding(start = 14.dp, end = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color.White)
-                }
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    stringResource(R.string.app_name),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(Modifier.weight(1f))
-                IconButton(onClick = onSearch) {
-                    Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.search))
-                }
-                IconButton(onClick = onProfile) {
-                    Icon(Icons.Filled.Person, contentDescription = stringResource(R.string.nav_you))
+                    Box(
+                        Modifier
+                            .size(30.dp)
+                            .clip(RoundedCornerShape(9.dp))
+                            .background(Color(0xFFFF0000)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color.White)
+                    }
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        stringResource(R.string.app_name),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = onSurface
+                    )
+                    Spacer(Modifier.weight(1f))
+                    IconButton(onClick = onSearch) {
+                        Icon(
+                            Icons.Filled.Search,
+                            contentDescription = stringResource(R.string.search),
+                            tint = onSurface
+                        )
+                    }
+                    IconButton(onClick = onProfile) {
+                        Icon(
+                            Icons.Filled.Person,
+                            contentDescription = stringResource(R.string.nav_you),
+                            tint = onSurface
+                        )
+                    }
                 }
             }
         }
