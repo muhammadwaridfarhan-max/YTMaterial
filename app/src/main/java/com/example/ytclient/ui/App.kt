@@ -86,6 +86,8 @@ import com.example.ytclient.data.VideoItem
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.abs
 import androidx.compose.runtime.collectAsState
@@ -138,15 +140,26 @@ fun App(vm: MainViewModel = viewModel()) {
     // Floating top bar: shrinks to a compact pill while the page scrolls, grows back on scroll up.
     // `collapse` is only read in layout/draw lambdas, so scrolling never recomposes this screen.
     val topBarCollapse = remember { TopBarCollapse() }
+    val scrollActivity = remember { ScrollActivity() }
     val hideConnection = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                if (available.y != 0f) topBarCollapse.onScroll(available.y)
+                if (available.y != 0f) {
+                    topBarCollapse.onScroll(available.y)
+                    scrollActivity.ping()
+                }
                 return Offset.Zero
             }
         }
     }
     androidx.compose.runtime.LaunchedEffect(pagerState.currentPage) { topBarCollapse.reset() }
+    androidx.compose.runtime.LaunchedEffect(scrollActivity) {
+        androidx.compose.runtime.snapshotFlow { scrollActivity.tick }.collectLatest {
+            scrollActivity.active = true
+            delay(120)
+            scrollActivity.active = false
+        }
+    }
     val account by com.example.ytclient.auth.AccountManager.user.collectAsState(initial = null)
     // Warm the Shorts feed in the background; the page itself is only composed when you open it.
     androidx.compose.runtime.LaunchedEffect(Unit) {
@@ -155,7 +168,10 @@ fun App(vm: MainViewModel = viewModel()) {
     }
 
     Box(Modifier.fillMaxSize()) {
-        CompositionLocalProvider(LocalFloatingInsets provides insets) {
+        CompositionLocalProvider(
+            LocalFloatingInsets provides insets,
+            LocalScrollActivity provides scrollActivity
+        ) {
             Box(
                 Modifier
                     .fillMaxSize()

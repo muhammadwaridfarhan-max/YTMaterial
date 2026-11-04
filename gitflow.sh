@@ -100,7 +100,8 @@ cmd_save() {
 }
 
 latest_run_id() {
-  gh run list -R "$REPO" -w "$WORKFLOW" -b "$BRANCH" -L 1 --json databaseId -q '.[0].databaseId'
+  gh run list -R "$REPO" -w "$WORKFLOW" -L 15 --json databaseId,headBranch \
+    -q "map(select(.headBranch==\"$BRANCH\"))[0].databaseId"
 }
 
 cmd_watch() {

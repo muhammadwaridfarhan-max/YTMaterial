@@ -63,7 +63,7 @@ fun VideoCard(
     val thumbRequest = remember(item.thumbnail) {
         ImageRequest.Builder(context).data(item.thumbnail).size(640, 360).build()
     }
-    val views = formatViews(item.views)
+    val views = formatViews(item.views) ?: item.viewsText
     val meta = remember(item.channel, views, item.uploaded) {
         listOfNotNull(item.channel.ifBlank { null }, views, item.uploaded).joinToString(" • ")
     }
@@ -112,11 +112,6 @@ fun VideoCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(Modifier.height(3.dp))
-                val meta = listOfNotNull(
-                    item.channel.ifBlank { null },
-                    formatViews(item.views) ?: item.viewsText,
-                    item.uploaded
-                ).joinToString(" • ")
                 Text(
                     meta,
                     style = MaterialTheme.typography.bodySmall,
@@ -133,7 +128,7 @@ fun VideoCard(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                if (menu) DropdownMenu(expanded = true, onDismissRequest = { menu = false }) {
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.open_channel)) },
                         onClick = {
