@@ -31,7 +31,6 @@ import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -59,11 +58,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import com.example.ytclient.R
-import com.example.ytclient.auth.AccountManager
 import com.example.ytclient.auth.AuthManager
 import com.example.ytclient.settings.AppLanguage
 import com.example.ytclient.settings.AppSettings
@@ -78,7 +73,7 @@ import kotlin.math.roundToInt
 private enum class SettingsDialog { THEME, COLOR, LANGUAGE, RESOLUTION, BLUR, BLUR_ENABLED }
 
 @Composable
-fun YouScreen(onSignIn: () -> Unit = {}) {
+fun YouScreen(vm: MainViewModel? = null, onSignIn: () -> Unit = {}) {
     val scope = rememberCoroutineScope()
     val settings by SettingsManager.settings.collectAsState(initial = AppSettings())
     var dialog by remember { mutableStateOf<SettingsDialog?>(null) }
@@ -93,20 +88,13 @@ fun YouScreen(onSignIn: () -> Unit = {}) {
         )
     ) {
         item {
-            val user by AccountManager.user.collectAsState(initial = null)
-            val context = LocalContext.current
-            val scope = rememberCoroutineScope()
-            var syncing by remember { mutableStateOf(false) }
-            var syncError by remember { mutableStateOf<String?>(null) }
-            val signedIn by remember { derivedStateOf { user != null } }
-
             Text(
                 stringResource(R.string.nav_you),
                 style = MaterialTheme.typography.headlineSmall
             )
             Spacer(Modifier.height(12.dp))
-
-            // Profile card: Google photo + name + email, with a one-tap photo sync.
+            val signedIn by AuthManager.signedIn.collectAsState(initial = false)
+            val account by com.example.ytclient.auth.AccountManager.user.collectAsState(initial = null)
             Surface(
                 shape = RoundedCornerShape(24.dp),
                 color = MaterialTheme.colorScheme.primaryContainer,
@@ -116,116 +104,66 @@ fun YouScreen(onSignIn: () -> Unit = {}) {
                     Modifier.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(
+                    val photo = if (signedIn) account?.photoUrl else null
+                    if (photo != null) {
+                        // Photo of the signed-in Google/YouTube account.
+                        coil.compose.AsyncImage(
+                            model = photo,
+                            contentDescription = null,
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(androidx.compose.foundation.shape.CircleShape)
+                        )
+                    } else {
+                        Icon(
+                            Icons.Filled.AccountCircle,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(56.dp)
+                        )
+                    }
+                    Column(
                         Modifier
-                            .size(56.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.15f))
+                            .weight(1f)
+                            .padding(horizontal = 12.dp)
                     ) {
-                        if (user != null && !syncing) {
-                            AsyncImage(
-                                model = user.photoUrl,
-                                contentDescription = user.name,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        } else {
-                            Icon(
-                                Icons.Filled.AccountCircle,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(56.dp)
-                            )
-                        }
-                        if (syncing) {
-                            CircularProgressIndicator(
-                                Modifier.size(20.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                    Spacer(Modifier.width(16.dp))
-                    Column(Modifier.weight(1f)) {
                         Text(
-                            user?.name ?: stringResource(R.string.nav_you),
+                            if (signedIn) account?.name?.ifBlank { null }
+                                ?: stringResource(R.string.signed_in)
+                            else stringResource(R.string.sign_in),
                             style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
                         Text(
-                            user?.email ?: stringResource(R.string.login_hint),
+                            if (signedIn) account?.email?.ifBlank { null }
+                                ?: stringResource(R.string.account_synced)
+                            else stringResource(R.string.login_hint),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
-                    }
-                    if (user != null) {
-                        OutlinedButton(
-                            onClick = {
-                                syncing = true
-                                syncError = null
-                                scope.launch {
-                                    AccountManager.syncAccount(context).onFailure { e ->
-                                        syncError = e.message
-                                    }
-                                    syncing = false
-                                }
-                            },
-                            modifier = Modifier.height(40.dp)
-                        ) {
-                            if (syncing) {
-                                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-                                Spacer(Modifier.width(6.dp))
-                            }
+                        if (signedIn) {
                             Text(
-                                if (syncing) stringResource(R.string.syncing)
-                                else stringResource(R.string.sync_profile)
+                                stringResource(R.string.account_synced),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                             )
+                        }
+                    }
+                    if (signedIn) {
+                        TextButton(onClick = { scope.launch { AuthManager.signOut() } }) {
+                            Text(stringResource(R.string.sign_out))
                         }
                     } else {
-                        Button(
-                            onClick = onSignIn,
-                            modifier = Modifier.height(40.dp)
-                        ) {
-                            Text(stringResource(R.string.sign_in_short))
-                        }
-                    }
-                    if (syncError != null) {
-                        Text(
-                            syncError ?: "",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
+                        Button(onClick = onSignIn) { Text(stringResource(R.string.sign_in_short)) }
                     }
                 }
             }
             Spacer(Modifier.height(16.dp))
-        }
-        item {
-            SettingsItem(
-        }
-
-        // Google-feed toggle: show the signed-in Google account's YouTube feed as the home tab.
-        item {
-            val signedIn by AuthManager.signedIn.collectAsState(initial = false)
-            val token by AuthManager.accessToken.collectAsState(initial = null)
-            val enabled = vm.useGoogleFeed
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    stringResource(R.string.google_feed_label),
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.weight(1f)
-                )
-                Switch(
-                    checked = enabled && signedIn && token != null,
-                    onCheckedChange = { vm.setUseGoogleFeed(it) },
-                    enabled = signedIn && token != null
-                )
-            }
         }
         item {
             SettingsItem(

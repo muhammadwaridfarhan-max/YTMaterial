@@ -44,7 +44,7 @@ fun Modifier.glass(
             state = hazeState,
             style = HazeStyle(
                 backgroundColor = scheme.surface,
-                tint = HazeTint(scheme.surfaceContainerHigh.copy(alpha = 0.72f)),
+                tint = HazeTint(scheme.surfaceContainerHigh.copy(alpha = 0.80f)),
                 blurRadius = effectiveRadius,
                 noiseFactor = 0.03f
             )
@@ -59,6 +59,8 @@ fun Modifier.glass(
 fun GlassContent(content: @Composable () -> Unit) {
     CompositionLocalProvider(
         LocalContentColor provides MaterialTheme.colorScheme.onSurface,
+        androidx.compose.material3.LocalTextStyle provides
+            androidx.compose.material3.LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onSurface),
         content = content
     )
 }

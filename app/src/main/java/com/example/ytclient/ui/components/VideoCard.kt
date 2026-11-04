@@ -111,7 +111,12 @@ fun VideoCard(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(3.dp))
+                val meta = listOfNotNull(
+                    item.channel.ifBlank { null },
+                    formatViews(item.views) ?: item.viewsText,
+                    item.uploaded
+                ).joinToString(" • ")
                 Text(
                     meta,
                     style = MaterialTheme.typography.bodySmall,

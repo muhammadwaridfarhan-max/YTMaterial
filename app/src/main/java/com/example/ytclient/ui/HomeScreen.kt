@@ -45,41 +45,26 @@ fun HomeScreen(vm: MainViewModel, onPlay: (VideoItem) -> Unit, onChannelClick: (
     ) {
         // Chips live in the list header, so the feed scrolls edge to edge under the floating bars.
         VideoList(
-            state = if (vm.useGoogleFeed) vm.googleFeedState else vm.homeState,
-            onRetry = if (vm.useGoogleFeed) { /* Google feed driven by account token */ } else vm::retryFilter,
+            state = vm.homeState,
+            onRetry = vm::retryFilter,
             onPlay = onPlay,
             modifier = Modifier.fillMaxSize(),
             onChannelClick = onChannelClick,
             topPadding = insets.top,
             bottomPadding = insets.bottom,
             header = {
-                if (vm.useGoogleFeed) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            stringResource(R.string.google_feed_label),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    itemsIndexed(filters.toList()) { index, label ->
+                        GlassChip(
+                            label = label,
+                            selected = vm.selectedFilter == index,
+                            onClick = { vm.selectFilter(index, label) }
                         )
-                    }
-                } else {
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        itemsIndexed(filters.toList()) { index, label ->
-                            GlassChip(
-                                label = label,
-                                selected = vm.selectedFilter == index,
-                                onClick = { vm.selectFilter(index, label) }
-                            )
-                        }
                     }
                 }
             },
-            onLoadMore = if (vm.useGoogleFeed) vm::loadMoreGoogleFeed else vm::loadMoreHome,
-            loadingMore = if (vm.useGoogleFeed) vm.googleFeedLoadingMore else vm.homeLoadingMore
+            onLoadMore = vm::loadMoreHome,
+            loadingMore = vm.homeLoadingMore
         )
     }
 }

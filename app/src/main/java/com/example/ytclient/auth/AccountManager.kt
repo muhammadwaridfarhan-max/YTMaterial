@@ -16,16 +16,8 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.example.ytclient.BuildConfig
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import org.json.JSONObject
-import java.io.IOException
-import java.util.concurrent.TimeUnit
-import com.example.ytclient.data.Net
 
 data class GoogleUser(val name: String, val email: String, val photoUrl: String?)
 
@@ -52,10 +44,24 @@ object AccountManager {
 
     val user: Flow<GoogleUser?> by lazy {
         store.data.map { p ->
-            val email = p[KEY_EMAIL]
-            if (email.isNullOrBlank()) null
-            else GoogleUser(p[KEY_NAME].orEmpty(), email, p[KEY_PHOTO])
+            val email = p[KEY_EMAIL].orEmpty()
+            val name = p[KEY_NAME].orEmpty()
+            if (email.isBlank() && name.isBlank()) null
+            else GoogleUser(name, email, p[KEY_PHOTO])
         }
+    }
+
+    /** Profile of the YouTube account (name, handle, photo) fetched after the device-code login. */
+    suspend fun saveProfile(user: GoogleUser) {
+        store.edit {
+            it[KEY_NAME] = user.name
+            it[KEY_EMAIL] = user.email
+            if (user.photoUrl != null) it[KEY_PHOTO] = user.photoUrl else it.remove(KEY_PHOTO)
+        }
+    }
+
+    suspend fun clearProfile() {
+        store.edit { it.clear() }
     }
 
     /** [activityContext] must be an Activity context so the account picker can be shown. */
@@ -67,7 +73,8 @@ object AccountManager {
             val option = GetSignInWithGoogleOption.Builder(BuildConfig.GOOGLE_WEB_CLIENT_ID).build()
             val request = GetCredentialRequest.Builder().addCredentialOption(option).build()
             val credential = CredentialManager.create(activityContext)
-                .getCredential(activityContext, request).credential
+                .getCredential(activityContext, request)
+                .credential
             if (credential is CustomCredential &&
                 credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
             ) {
@@ -91,49 +98,6 @@ object AccountManager {
         } catch (e: NoCredentialException) {
             Result.failure(LoginError.NoAccount)
         } catch (e: GetCredentialException) {
-            Result.failure(LoginError.Failed)
-        } catch (e: Exception) {
-            Result.failure(LoginError.Failed)
-        }
-    }
-
-    /** Refresh the stored profile (name, email, photo) from Google using the access token.
-     *  This keeps the account tab photo in sync with the Google account. */
-    suspend fun syncAccount(context: Context): Result<GoogleUser> = withContext(Dispatchers.IO) {
-        val token = AuthManager.getAccessToken() ?: return@withContext Result.failure(LoginError.NoAccount)
-        try {
-            val req = Request.Builder()
-                .url("https://www.googleapis.com/oauth2/v3/userinfo")
-                .header("Authorization", "Bearer $token")
-                .header("Accept", "application/json")
-                .build()
-            val http = OkHttpClient.Builder()
-                .dns(Net.dns)
-                .connectTimeout(20, TimeUnit.SECONDS)
-                .readTimeout(20, TimeUnit.SECONDS)
-                .build()
-            http.newCall(req).execute().use { resp ->
-                if (resp.code != 200) {
-                    val body = resp.body?.string().orEmpty()
-                    throw IOException("HTTP ${resp.code} $body")
-                }
-                val json = JSONObject(resp.body?.string().orEmpty())
-                val name = json.optString("name")
-                val email = json.optString("email")
-                val photo = json.optString("picture")
-                val user = GoogleUser(
-                    name = name.ifBlank { email.take(1).uppercase() },
-                    email = email,
-                    photoUrl = if (photo.isBlank()) null else photo
-                )
-                store.edit {
-                    it[KEY_NAME] = user.name
-                    it[KEY_EMAIL] = user.email
-                    if (user.photoUrl != null) it[KEY_PHOTO] = user.photoUrl else it.remove(KEY_PHOTO)
-                }
-                Result.success(user)
-            }
-        } catch (e: IOException) {
             Result.failure(LoginError.Failed)
         } catch (e: Exception) {
             Result.failure(LoginError.Failed)

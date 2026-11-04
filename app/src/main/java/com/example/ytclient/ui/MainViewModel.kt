@@ -1,24 +1,39 @@
 package com.example.ytclient.ui
 
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.ytclient.data.FeedPager
-import com.example.ytclient.data.GoogleFeed
-import com.example.ytclient.data.Repository
-import com.example.ytclient.data.VideoItem
+import com.example.ytclient.auth.AccountManager
 import com.example.ytclient.auth.AuthManager
+import com.example.ytclient.data.AccountPager
+import com.example.ytclient.data.ChannelDetails
+import com.example.ytclient.data.ChannelTabPager
+import com.example.ytclient.data.Pager
+import com.example.ytclient.data.Repository
+import com.example.ytclient.data.SearchFilter
+import com.example.ytclient.data.SearchHistory
+import com.example.ytclient.data.VideoItem
+import com.example.ytclient.data.YtAccountApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import org.schabi.newpipe.extractor.channel.tabs.ChannelTabs
+import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler
 
 sealed interface UiState {
     data object Loading : UiState
+
+    @Immutable
     data class Success(val items: List<VideoItem>) : UiState
     data class Error(val message: String) : UiState
 }
+
+enum class ChannelTab { VIDEOS, SHORTS, LIVE, ABOUT }
 
 class MainViewModel : ViewModel() {
     var homeState by mutableStateOf<UiState>(UiState.Loading)
@@ -27,8 +42,23 @@ class MainViewModel : ViewModel() {
         private set
     var relatedState by mutableStateOf<UiState?>(null)
         private set
+
+    /** Text in the search box. */
     var query by mutableStateOf("")
+        private set
+    var searchFilter by mutableStateOf(SearchFilter.ALL)
+        private set
+    var suggestions by mutableStateOf<List<String>>(emptyList())
+        private set
+    var history by mutableStateOf<List<String>>(emptyList())
+        private set
+    private var suggestJob: Job? = null
+
     var selectedFilter by mutableIntStateOf(0)
+        private set
+
+    /** True while a Google/YouTube account is signed in: home + subscriptions come from it. */
+    var signedIn by mutableStateOf(false)
         private set
 
     var shortsState by mutableStateOf<UiState>(UiState.Loading)
@@ -50,29 +80,47 @@ class MainViewModel : ViewModel() {
         private set
     var searchRefreshing by mutableStateOf(false)
         private set
-    private var homePager: FeedPager? = null
+    private var homePager: Pager? = null
     private var homeJob: Job? = null
-    private var searchPager: FeedPager? = null
+    private var searchPager: Pager? = null
     private var searchJob: Job? = null
+
+    // Subscriptions feed of the signed-in account.
+    var subsState by mutableStateOf<UiState>(UiState.Loading)
+        private set
+    var subsLoadingMore by mutableStateOf(false)
+        private set
+    var subsRefreshing by mutableStateOf(false)
+        private set
+    private var subsPager: Pager? = null
+    private var subsJob: Job? = null
+
+    // Channel page.
     var channelState by mutableStateOf<UiState?>(null)
         private set
     var channelLoadingMore by mutableStateOf(false)
         private set
-    private var channelPager: FeedPager? = null
+    var channelDetails by mutableStateOf<ChannelDetails?>(null)
+        private set
+    var channelTab by mutableStateOf(ChannelTab.VIDEOS)
+        private set
+    var channelTabs by mutableStateOf(listOf(ChannelTab.VIDEOS, ChannelTab.ABOUT))
+        private set
+    private var channelHandlers: Map<String, ListLinkHandler> = emptyMap()
+    private var channelName = ""
+    private var channelPager: Pager? = null
     private var channelJob: Job? = null
 
-    // Google-feed (signed-in account)
-    var googleFeedState by mutableStateOf<UiState?>(null)
-        private set
-    var googleFeedLoadingMore by mutableStateOf(false)
-        private set
-    private var googlePager: GoogleFeed.GoogleFeedPager? = null
-    private var googleJob: Job? = null
+    // ---- home ---------------------------------------------------------------------------
+
+    private fun newHomePager(): Pager =
+        if (signedIn) AccountPager(AccountPager.HOME) { Repository.homePager() }
+        else Repository.homePager()
 
     fun loadHome() {
         selectedFilter = 0
         lastFilterLabel = null
-        startHome(Repository.homePager(), "Gagal memuat video")
+        startHome(newHomePager(), "Gagal memuat video")
     }
 
     fun selectFilter(index: Int, label: String?) {
@@ -87,7 +135,7 @@ class MainViewModel : ViewModel() {
         startHome(Repository.searchPager(q), "Pencarian gagal")
     }
 
-    private fun startHome(pager: FeedPager, fallbackError: String) {
+    private fun startHome(pager: Pager, fallbackError: String) {
         homeJob?.cancel()
         homeLoadingMore = false
         homePager = pager
@@ -120,16 +168,18 @@ class MainViewModel : ViewModel() {
 
     fun retryFilter() {
         val label = lastFilterLabel
-        if (selectedFilter == 0 || label == null) refreshHome() else refreshSearch()
+        if (selectedFilter == 0 || label == null) refreshHome() else refreshSearchHome()
     }
+
+    private fun refreshSearchHome() = refreshHome()
 
     fun refreshHome() {
         homeJob?.cancel()
         homeLoadingMore = false
         homeRefreshing = true
-        val pager = if (selectedFilter == 0) Repository.homePager() else {
+        val pager = if (selectedFilter == 0) newHomePager() else {
             val q = lastFilterLabel?.trim().orEmpty()
-            if (q.isEmpty()) Repository.homePager() else Repository.searchPager(q)
+            if (q.isEmpty()) newHomePager() else Repository.searchPager(q)
         }
         homePager = pager
         homeJob = viewModelScope.launch {
@@ -141,61 +191,90 @@ class MainViewModel : ViewModel() {
         }
     }
 
-    fun refreshSearch() {
-        searchJob?.cancel()
-        searchLoadingMore = false
-        searchRefreshing = true
-        val q = query.trim()
-        if (q.isEmpty()) {
-            searchRefreshing = false
-            return
-        }
-        val pager = Repository.searchPager(q)
-        searchPager = pager
-        searchJob = viewModelScope.launch {
-            searchState = runCatching { pager.nextBatch() }.fold(
-                onSuccess = { UiState.Success(it) },
-                onFailure = { UiState.Error(it.message ?: "Pencarian gagal") }
-            )
-            searchRefreshing = false
+    // ---- account ------------------------------------------------------------------------
+
+    /** Re-reads name + photo of the signed-in account so the avatar always matches Google. */
+    fun refreshProfile() {
+        viewModelScope.launch {
+            runCatching { YtAccountApi.profile() }.getOrNull()?.let { AccountManager.saveProfile(it) }
         }
     }
 
-    fun loadChannel(name: String) {
-        channelJob?.cancel()
-        channelLoadingMore = false
-        channelState = UiState.Loading
-        val pager = Repository.channelPager(name)
-        channelPager = pager
-        channelJob = viewModelScope.launch {
-            channelState = runCatching { pager.nextBatch() }.fold(
+    fun loadSubsFeed(force: Boolean = false) {
+        if (!signedIn) return
+        if (!force && (subsState is UiState.Success || subsJob?.isActive == true)) return
+        subsJob?.cancel()
+        subsLoadingMore = false
+        val pager = AccountPager(AccountPager.SUBSCRIPTIONS)
+        subsPager = pager
+        subsJob = viewModelScope.launch {
+            subsState = UiState.Loading
+            subsState = runCatching { pager.nextBatch() }.fold(
                 onSuccess = { UiState.Success(it) },
-                onFailure = { UiState.Error(it.message ?: "Gagal memuat channel") }
+                onFailure = { UiState.Error(it.message ?: "Gagal memuat langganan") }
             )
         }
     }
 
-    fun loadMoreChannel() {
-        val pager = channelPager ?: return
-        if (channelLoadingMore || pager.exhausted || channelState !is UiState.Success) return
-        channelLoadingMore = true
-        channelJob = viewModelScope.launch {
+    fun refreshSubs() {
+        subsRefreshing = true
+        viewModelScope.launch {
             try {
-                val fresh = runCatching { pager.nextBatch() }.getOrDefault(emptyList())
-                val latest = (channelState as? UiState.Success)?.items
-                if (channelPager === pager && latest != null && fresh.isNotEmpty()) {
-                    channelState = UiState.Success(latest + fresh)
-                }
+                loadSubsFeed(force = true)
+                subsJob?.join()
             } finally {
-                if (channelPager === pager) channelLoadingMore = false
+                subsRefreshing = false
             }
         }
     }
 
-    fun runSearch() {
+    fun loadMoreSubs() {
+        val pager = subsPager ?: return
+        if (subsLoadingMore || pager.exhausted || subsState !is UiState.Success) return
+        subsLoadingMore = true
+        subsJob = viewModelScope.launch {
+            try {
+                val fresh = runCatching { pager.nextBatch() }.getOrDefault(emptyList())
+                val latest = (subsState as? UiState.Success)?.items
+                if (subsPager === pager && latest != null && fresh.isNotEmpty()) {
+                    subsState = UiState.Success(latest + fresh)
+                }
+            } finally {
+                if (subsPager === pager) subsLoadingMore = false
+            }
+        }
+    }
+
+    // ---- search -------------------------------------------------------------------------
+
+    fun onQueryChange(text: String) {
+        query = text
+        suggestJob?.cancel()
+        if (text.isBlank()) {
+            suggestions = emptyList()
+            return
+        }
+        suggestJob = viewModelScope.launch {
+            delay(220)
+            suggestions = runCatching { Repository.suggestions(text.trim()) }
+                .getOrDefault(emptyList())
+        }
+    }
+
+    fun selectSearchFilter(filter: SearchFilter) {
+        if (searchFilter == filter) return
+        searchFilter = filter
+        if (query.isNotBlank()) runSearch(record = false)
+    }
+
+    fun runSearch(text: String? = null, record: Boolean = true) {
+        if (text != null) query = text
         val q = query.trim()
         if (q.isEmpty()) return
-        val pager = Repository.searchPager(q)
+        suggestJob?.cancel()
+        suggestions = emptyList()
+        if (record) viewModelScope.launch { SearchHistory.add(q) }
+        val pager = Repository.searchPager(q, searchFilter)
         searchJob?.cancel()
         searchLoadingMore = false
         searchPager = pager
@@ -205,6 +284,23 @@ class MainViewModel : ViewModel() {
                 onSuccess = { UiState.Success(it) },
                 onFailure = { UiState.Error(it.message ?: "Pencarian gagal") }
             )
+        }
+    }
+
+    fun refreshSearch() {
+        searchJob?.cancel()
+        searchLoadingMore = false
+        val q = query.trim()
+        if (q.isEmpty()) return
+        searchRefreshing = true
+        val pager = Repository.searchPager(q, searchFilter)
+        searchPager = pager
+        searchJob = viewModelScope.launch {
+            searchState = runCatching { pager.nextBatch() }.fold(
+                onSuccess = { UiState.Success(it) },
+                onFailure = { UiState.Error(it.message ?: "Pencarian gagal") }
+            )
+            searchRefreshing = false
         }
     }
 
@@ -224,6 +320,89 @@ class MainViewModel : ViewModel() {
             }
         }
     }
+
+    fun removeHistory(item: String) {
+        viewModelScope.launch { SearchHistory.remove(item) }
+    }
+
+    fun clearHistory() {
+        viewModelScope.launch { SearchHistory.clear() }
+    }
+
+    // ---- channel ------------------------------------------------------------------------
+
+    fun loadChannel(name: String) {
+        channelJob?.cancel()
+        channelLoadingMore = false
+        channelState = UiState.Loading
+        channelDetails = null
+        channelTab = ChannelTab.VIDEOS
+        channelTabs = listOf(ChannelTab.VIDEOS, ChannelTab.ABOUT)
+        channelHandlers = emptyMap()
+        channelName = name
+        channelJob = viewModelScope.launch {
+            val bundle = runCatching { Repository.channelBundle(name) }.getOrNull()
+            channelDetails = bundle?.details
+            channelHandlers = bundle?.tabs.orEmpty()
+            channelTabs = buildList {
+                add(ChannelTab.VIDEOS)
+                if (channelHandlers.containsKey(ChannelTabs.SHORTS)) add(ChannelTab.SHORTS)
+                if (channelHandlers.containsKey(ChannelTabs.LIVESTREAMS)) add(ChannelTab.LIVE)
+                add(ChannelTab.ABOUT)
+            }
+            startChannelTab(ChannelTab.VIDEOS)
+        }
+    }
+
+    fun selectChannelTab(tab: ChannelTab) {
+        if (tab == channelTab) return
+        channelTab = tab
+        if (tab != ChannelTab.ABOUT) {
+            channelJob?.cancel()
+            channelLoadingMore = false
+            channelState = UiState.Loading
+            channelJob = viewModelScope.launch { startChannelTab(tab) }
+        }
+    }
+
+    private suspend fun startChannelTab(tab: ChannelTab) {
+        val key = when (tab) {
+            ChannelTab.SHORTS -> ChannelTabs.SHORTS
+            ChannelTab.LIVE -> ChannelTabs.LIVESTREAMS
+            else -> ChannelTabs.VIDEOS
+        }
+        val details = channelDetails
+        val handler = channelHandlers[key]
+        val pager: Pager = if (handler != null) {
+            ChannelTabPager(handler, details?.name ?: channelName, details?.avatar)
+        } else {
+            Repository.channelPager(channelName)
+        }
+        channelPager = pager
+        channelState = runCatching { pager.nextBatch() }.fold(
+            onSuccess = { UiState.Success(it) },
+            onFailure = { UiState.Error(it.message ?: "Gagal memuat channel") }
+        )
+    }
+
+    fun loadMoreChannel() {
+        val pager = channelPager ?: return
+        if (channelLoadingMore || pager.exhausted || channelState !is UiState.Success) return
+        channelLoadingMore = true
+        channelJob = viewModelScope.launch {
+            try {
+                val fresh = runCatching { pager.nextBatch() }.getOrDefault(emptyList())
+                val latest = (channelState as? UiState.Success)?.items
+                if (channelPager === pager && latest != null && fresh.isNotEmpty()) {
+                    channelState = UiState.Success(latest + fresh)
+                }
+            } finally {
+                if (channelPager === pager) channelLoadingMore = false
+            }
+        }
+    }
+
+    // ---- shorts / related ---------------------------------------------------------------
 
     fun loadShorts(force: Boolean = false) {
         if (!force && (shortsState is UiState.Success || shortsJob?.isActive == true)) return
@@ -278,74 +457,22 @@ class MainViewModel : ViewModel() {
         }
     }
 
-    // Google-feed (signed-in account)
-    var googleFeedState by mutableStateOf<UiState?>(null)
-        private set
-    var googleFeedLoadingMore by mutableStateOf(false)
-        private set
-    private var googlePager: GoogleFeed.GoogleFeedPager? = null
-    private var googleJob: Job? = null
-    private var googleToken by mutableStateOf<String?>(null)
-
-    fun loadGoogleFeed(accessToken: String) {
-        googleJob?.cancel()
-        googleFeedLoadingMore = false
-        googleToken = accessToken
-        googleFeedState = UiState.Loading
-        val pager = GoogleFeed.GoogleFeedPager(
-            sources = listOf(
-                { GoogleFeed.subscriptions(accessToken) },
-                { GoogleFeed.likedVideos(accessToken) }
-            )
-        )
-        googlePager = pager
-        googleJob = viewModelScope.launch {
-            googleFeedState = runCatching { pager.nextBatch(accessToken) }.fold(
-                onSuccess = { UiState.Success(it) },
-                onFailure = { UiState.Error(it.message ?: "Gagal memuat Google feed") }
-            )
-        }
-    }
-
-    fun loadMoreGoogleFeed() {
-        val pager = googlePager ?: return
-        if (googleFeedLoadingMore || pager.exhausted || googleFeedState !is UiState.Success) return
-        googleFeedLoadingMore = true
-        val token = googleToken ?: return
-        googleJob = viewModelScope.launch {
-            try {
-                val fresh = runCatching { pager.nextBatch(token) }.getOrDefault(emptyList())
-                val latest = (googleFeedState as? UiState.Success)?.items
-                if (googlePager === pager && latest != null && fresh.isNotEmpty()) {
-                    googleFeedState = UiState.Success(latest + fresh)
-                }
-            } finally {
-                if (googlePager === pager) googleFeedLoadingMore = false
-            }
-        }
-    }
-
-    var useGoogleFeed by mutableStateOf(false)
-        private set
-
-    fun setUseGoogleFeed(enabled: Boolean) {
-        useGoogleFeed = enabled
-        if (enabled) {
-            val token = AuthManager.getAccessToken()
-            if (!token.isNullOrBlank()) {
-                loadGoogleFeed(token)
-            }
-        } else {
-            googleFeedState = null
-            googleFeedLoadingMore = false
-            googlePager = null
-            googleJob?.cancel()
-            loadHome()
-        }
-    }
-
     // Must stay last: property initializers above have to run before the first load starts.
     init {
-        loadHome()
+        viewModelScope.launch { SearchHistory.items.collect { history = it } }
+        viewModelScope.launch {
+            // The feed follows the login state: sign in -> account feed, sign out -> anonymous feed.
+            AuthManager.signedIn.distinctUntilChanged().collect { now ->
+                signedIn = now
+                if (now) {
+                    refreshProfile()
+                    loadSubsFeed(force = true)
+                } else {
+                    subsState = UiState.Loading
+                    AccountManager.clearProfile()
+                }
+                loadHome()
+            }
+        }
     }
 }

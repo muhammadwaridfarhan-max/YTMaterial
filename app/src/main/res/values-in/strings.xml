@@ -67,9 +67,18 @@
     <string name="download_saved">Tersimpan: %1$s</string>
     <string name="download_audio_only">Audio saja (M4A)</string>
     <string name="channel_videos">%1$d video dimuat</string>
-    <string name="open_channel">Buka channel</string>
-    <string name="sync_profile">Sinkronkan foto profil</string>
-    <string name="syncing">Sinkronisasi…</string>
-    <string name="clear">Hapus</string>
-    <string name="google_feed_label">Pakai feed Google</string>
+    <string name="search_filter_all">Semua</string>
+    <string name="search_filter_shorts">Shorts</string>
+    <string name="search_filter_live">Live</string>
+    <string name="search_filter_recent">Baru diunggah</string>
+    <string name="search_recent">Pencarian terakhir</string>
+    <string name="search_clear_all">Hapus semua</string>
+    <string name="search_clear">Hapus</string>
+    <string name="channel_tab_videos">Video</string>
+    <string name="channel_tab_shorts">Shorts</string>
+    <string name="channel_tab_live">Live</string>
+    <string name="channel_tab_about">Tentang</string>
+    <string name="channel_subscribers">%1$s subscriber</string>
+    <string name="channel_no_description">Tidak ada deskripsi</string>
+    <string name="account_synced">Feed tersinkron dengan akun YouTube-mu</string>
 </resources>

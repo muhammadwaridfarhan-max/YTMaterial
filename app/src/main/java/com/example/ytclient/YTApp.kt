@@ -28,6 +28,8 @@ class YTApp : Application(), ImageLoaderFactory {
         super.onCreate()
         SettingsManager.init(this)
         AuthManager.init(this)
+        com.example.ytclient.auth.AccountManager.init(this)
+        com.example.ytclient.data.SearchHistory.init(this)
         SubscriptionManager.init(this)
         val language = runBlocking { SettingsManager.settings.first() }.language
         applyLanguage(this, language)

@@ -135,22 +135,19 @@ fun App(vm: MainViewModel = viewModel()) {
     )
     val insets = FloatingInsets(statusTop + 72.dp, navBottom + 92.dp + miniExtra)
 
-    // Floating top bar: shrinks as the feed scrolls; springs back on scroll up.
-    var topBarHidden by remember { mutableStateOf(false) }
-    var scrollOffset by remember { mutableFloatStateOf(0f) }
+    // Floating top bar: shrinks to a compact pill while the page scrolls, grows back on scroll up.
+    // `collapse` is only read in layout/draw lambdas, so scrolling never recomposes this screen.
+    val topBarCollapse = remember { TopBarCollapse() }
     val hideConnection = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                // Accumulate downward scroll so the top bar can "menciut" (shrink). Clamp at 0 so
-                // a quick upward flick doesn't make the bar stretch taller than 80 dp.
-                scrollOffset = (scrollOffset + available.y).coerceAtLeast(0f)
-                if (available.y < -12f) topBarHidden = true
-                else if (available.y > 12f) topBarHidden = false
+                if (available.y != 0f) topBarCollapse.onScroll(available.y)
                 return Offset.Zero
             }
         }
     }
-    androidx.compose.runtime.LaunchedEffect(pagerState.currentPage) { topBarHidden = false }
+    androidx.compose.runtime.LaunchedEffect(pagerState.currentPage) { topBarCollapse.reset() }
+    val account by com.example.ytclient.auth.AccountManager.user.collectAsState(initial = null)
     // Warm the Shorts feed in the background; the page itself is only composed when you open it.
     androidx.compose.runtime.LaunchedEffect(Unit) {
         kotlinx.coroutines.delay(1200)
@@ -201,20 +198,21 @@ fun App(vm: MainViewModel = viewModel()) {
                                     active = pagerState.currentPage == 1,
                                     onChannelClick = { currentChannel = it; showChannel = true }
                                 )
-                                2 -> SubsScreen(onOpenChannel = { currentChannel = it; showChannel = true })
-                                else -> YouScreen(onSignIn = { showLogin = true })
+                                2 -> SubsScreen(vm, onPlay = controller::open, onOpenChannel = { currentChannel = it; showChannel = true })
+                                else -> YouScreen(vm = vm, onSignIn = { showLogin = true })
                             }
                         }
                     }
                 }
                 FloatingTopBar(
-                    visible = !topBarHidden && pagerState.currentPage != 1,
+                    visible = pagerState.currentPage != 1,
+                    collapse = { topBarCollapse.progress },
+                    photoUrl = account?.photoUrl,
                     onSearch = { showSearch = true },
                     onProfile = { scope.launch { pagerState.animateScrollToPage(3) } },
                     hazeState = hazeState,
                     blurStrength = blurStrength,
                     blurEnabled = blurEnabled,
-                    scrollOffset = scrollOffset,
                     modifier = Modifier.align(Alignment.TopCenter)
                 )
                 MiniPlayer(
@@ -293,6 +291,21 @@ fun App(vm: MainViewModel = viewModel()) {
         if (showLogin) {
             LoginSheet(onDismiss = { showLogin = false })
         }
+    }
+}
+
+@androidx.compose.runtime.Stable
+class TopBarCollapse {
+    var progress by mutableFloatStateOf(0f)
+        private set
+
+    fun onScroll(dy: Float) {
+        // dy < 0: the page scrolls down -> collapse; dy > 0: scrolling back up -> expand.
+        progress = (progress - dy / 260f).coerceIn(0f, 1f)
+    }
+
+    fun reset() {
+        progress = 0f
     }
 }
 

@@ -23,6 +23,17 @@ Google sign-in.
 ./gradlew assembleDebug
 ```
 
+## Git & CI dari terminal Ubuntu
+
+```bash
+chmod +x scripts/gitflow.sh
+./scripts/gitflow.sh setup            # pasang git, gh, JDK 17, set remote
+./scripts/gitflow.sh login            # login GitHub
+./scripts/gitflow.sh save "pesan"     # add + commit + push
+./scripts/gitflow.sh ci               # jalankan workflow Android CI & pantau
+./scripts/gitflow.sh release v1.0.0   # tag -> workflow Release APK
+```
+
 ## Requirements
 
 * JDK 17

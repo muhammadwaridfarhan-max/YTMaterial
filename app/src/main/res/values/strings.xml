@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <string name="login_subtitle">Sign in to sync your subscriptions</string>
     <string name="login_not_configured">Google sign-in is not configured yet</string>
     <string name="login_no_account">No Google account found on this device</string>
@@ -79,9 +79,18 @@
     <string name="download_saved">Saved: %1$s</string>
     <string name="download_audio_only">Audio only (M4A)</string>
     <string name="channel_videos">%1$d videos loaded</string>
-    <string name="open_channel">Go to channel</string>
-    <string name="sync_profile">Sync profile photo</string>
-    <string name="syncing">Syncing…</string>
-    <string name="clear">Clear</string>
-    <string name="google_feed_label">Use Google feed</string>
+    <string name="search_filter_all">All</string>
+    <string name="search_filter_shorts">Shorts</string>
+    <string name="search_filter_live">Live</string>
+    <string name="search_filter_recent">Recently uploaded</string>
+    <string name="search_recent">Recent searches</string>
+    <string name="search_clear_all">Clear all</string>
+    <string name="search_clear">Clear</string>
+    <string name="channel_tab_videos">Videos</string>
+    <string name="channel_tab_shorts">Shorts</string>
+    <string name="channel_tab_live">Live</string>
+    <string name="channel_tab_about">About</string>
+    <string name="channel_subscribers">%1$s subscribers</string>
+    <string name="channel_no_description">No description</string>
+    <string name="account_synced">Feed synced with your YouTube account</string>
 </resources>

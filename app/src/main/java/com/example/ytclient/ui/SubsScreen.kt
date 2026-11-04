@@ -39,8 +39,52 @@ import com.example.ytclient.R
 import com.example.ytclient.data.SubscriptionManager
 import kotlinx.coroutines.launch
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-fun SubsScreen(onOpenChannel: (String) -> Unit) {
+fun SubsScreen(
+    vm: MainViewModel,
+    onPlay: (com.example.ytclient.data.VideoItem) -> Unit,
+    onOpenChannel: (String) -> Unit
+) {
+    if (vm.signedIn) {
+        // Signed in: the real subscriptions feed of the YouTube account.
+        androidx.compose.runtime.LaunchedEffect(Unit) { vm.loadSubsFeed() }
+        val insets = LocalFloatingInsets.current
+        val pullState = androidx.compose.material3.pulltorefresh.rememberPullToRefreshState()
+        androidx.compose.material3.pulltorefresh.PullToRefreshBox(
+            isRefreshing = vm.subsRefreshing,
+            onRefresh = { vm.refreshSubs() },
+            state = pullState,
+            modifier = Modifier.fillMaxSize(),
+            indicator = {
+                androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator(
+                    state = pullState,
+                    isRefreshing = vm.subsRefreshing,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = insets.top)
+                )
+            }
+        ) {
+            VideoList(
+                state = vm.subsState,
+                onRetry = { vm.loadSubsFeed(force = true) },
+                onPlay = onPlay,
+                modifier = Modifier.fillMaxSize(),
+                onChannelClick = onOpenChannel,
+                topPadding = insets.top,
+                bottomPadding = insets.bottom,
+                onLoadMore = vm::loadMoreSubs,
+                loadingMore = vm.subsLoadingMore
+            )
+        }
+    } else {
+        LocalSubsList(onOpenChannel)
+    }
+}
+
+@Composable
+private fun LocalSubsList(onOpenChannel: (String) -> Unit) {
     val channels by SubscriptionManager.channels.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
     if (channels.isEmpty()) {

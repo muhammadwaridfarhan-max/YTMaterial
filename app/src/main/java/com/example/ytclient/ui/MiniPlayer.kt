@@ -201,7 +201,13 @@ fun MiniPlayer(
                             overflow = TextOverflow.Ellipsis
                         )
                     }
-                    FilledTonalIconButton(onClick = controller::togglePlay) {
+                    FilledTonalIconButton(
+                        onClick = controller::togglePlay,
+                        colors = androidx.compose.material3.IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    ) {
                         Icon(
                             if (controller.isPlayingState) Icons.Filled.Pause
                             else Icons.Filled.PlayArrow,
@@ -217,7 +223,7 @@ fun MiniPlayer(
                 WavyProgress(
                     progress = progress,
                     animate = controller.isPlayingState,
-                    activeColor = Color(0xFFFF2D3C),
+                    activeColor = MaterialTheme.colorScheme.primary,
                     trackColor = MaterialTheme.colorScheme.outlineVariant,
                     modifier = Modifier.padding(start = 18.dp, end = 18.dp, bottom = 6.dp),
                     height = 8.dp,
