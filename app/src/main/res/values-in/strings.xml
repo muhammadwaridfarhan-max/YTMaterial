@@ -81,4 +81,5 @@
     <string name="channel_subscribers">%1$s subscriber</string>
     <string name="channel_no_description">Tidak ada deskripsi</string>
     <string name="account_synced">Feed tersinkron dengan akun YouTube-mu</string>
+    <string name="open_channel">Buka channel</string>
 </resources>

@@ -323,14 +323,14 @@ object YtAccountApi {
 
     /** Token for the next page of the feed (section list / grid level), or null at the end. */
     fun nextToken(json: JSONObject): String? {
-        val surface = arrayOf("contents", "tvBrowseRenderer", "content", "tvSurfaceContentRenderer")
+        val surface = arrayOf<Any>("contents", "tvBrowseRenderer", "content", "tvSurfaceContentRenderer")
         val candidates = listOf(
-            arrayOf(*surface, "content", "sectionListRenderer", "continuations", 0, "nextContinuationData", "continuation"),
-            arrayOf(*surface, "content", "gridRenderer", "continuations", 0, "nextContinuationData", "continuation"),
-            arrayOf(*surface, "continuation", "reloadContinuationData", "continuation"),
-            arrayOf("continuationContents", "sectionListContinuation", "continuations", 0, "nextContinuationData", "continuation"),
-            arrayOf("continuationContents", "gridContinuation", "continuations", 0, "nextContinuationData", "continuation"),
-            arrayOf("continuationContents", "horizontalListContinuation", "continuations", 0, "nextContinuationData", "continuation")
+            arrayOf<Any>(*surface, "content", "sectionListRenderer", "continuations", 0, "nextContinuationData", "continuation"),
+            arrayOf<Any>(*surface, "content", "gridRenderer", "continuations", 0, "nextContinuationData", "continuation"),
+            arrayOf<Any>(*surface, "continuation", "reloadContinuationData", "continuation"),
+            arrayOf<Any>("continuationContents", "sectionListContinuation", "continuations", 0, "nextContinuationData", "continuation"),
+            arrayOf<Any>("continuationContents", "gridContinuation", "continuations", 0, "nextContinuationData", "continuation"),
+            arrayOf<Any>("continuationContents", "horizontalListContinuation", "continuations", 0, "nextContinuationData", "continuation")
         )
         for (c in candidates) {
             (path(json, *c) as? String)?.takeIf { it.isNotBlank() }?.let { return it }

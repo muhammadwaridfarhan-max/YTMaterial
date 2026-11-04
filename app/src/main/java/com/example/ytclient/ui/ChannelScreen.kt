@@ -62,7 +62,7 @@ import com.example.ytclient.settings.SettingsManager
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.launch
-import java.text.CompactDecimalFormat
+import android.icu.text.CompactDecimalFormat
 import java.util.Locale
 
 @Composable

@@ -93,4 +93,5 @@
     <string name="channel_subscribers">%1$s subscribers</string>
     <string name="channel_no_description">No description</string>
     <string name="account_synced">Feed synced with your YouTube account</string>
+    <string name="open_channel">Go to channel</string>
 </resources>
