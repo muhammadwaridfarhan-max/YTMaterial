@@ -53,6 +53,9 @@ class MainViewModel : ViewModel() {
     var history by mutableStateOf<List<String>>(emptyList())
         private set
     private var suggestJob: Job? = null
+    /** True while suggestions for the current text are being fetched. */
+    var suggestionsLoading by mutableStateOf(false)
+        private set
 
     var selectedFilter by mutableIntStateOf(0)
         private set
@@ -252,12 +255,15 @@ class MainViewModel : ViewModel() {
         suggestJob?.cancel()
         if (text.isBlank()) {
             suggestions = emptyList()
+            suggestionsLoading = false
             return
         }
+        suggestionsLoading = true
         suggestJob = viewModelScope.launch {
             delay(220)
             suggestions = runCatching { Repository.suggestions(text.trim()) }
                 .getOrDefault(emptyList())
+            suggestionsLoading = false
         }
     }
 
@@ -273,6 +279,7 @@ class MainViewModel : ViewModel() {
         if (q.isEmpty()) return
         suggestJob?.cancel()
         suggestions = emptyList()
+        suggestionsLoading = false
         if (record) viewModelScope.launch { SearchHistory.add(q) }
         val pager = Repository.searchPager(q, searchFilter)
         searchJob?.cancel()

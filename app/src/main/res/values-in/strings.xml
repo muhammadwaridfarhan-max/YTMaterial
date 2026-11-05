@@ -82,4 +82,18 @@
     <string name="channel_no_description">Tidak ada deskripsi</string>
     <string name="account_synced">Feed tersinkron dengan akun YouTube-mu</string>
     <string name="open_channel">Buka channel</string>
+    <string name="player_settings">Pengaturan pemutar</string>
+    <string name="audio_language">Bahasa audio / Sulih suara</string>
+    <string name="audio_original">asli</string>
+    <string name="audio_single_track">Video ini hanya punya satu trek audio.</string>
+    <string name="subtitles">Subtitel / CC</string>
+    <string name="subtitle_auto_generated">dibuat otomatis</string>
+    <string name="subtitle_translate">Terjemahkan subtitel otomatis</string>
+    <string name="off">Mati</string>
+    <string name="sleep_timer">Timer tidur</string>
+    <string name="sleep_minutes">%1$d mnt</string>
+    <string name="sleep_end_of_video">Akhir video</string>
+    <string name="search_empty_title">Cari di YouTube</string>
+    <string name="search_clear_history">Hapus riwayat</string>
+    <string name="search_fill">Edit kueri</string>
 </resources>

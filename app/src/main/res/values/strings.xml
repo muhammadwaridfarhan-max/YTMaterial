@@ -94,4 +94,18 @@
     <string name="channel_no_description">No description</string>
     <string name="account_synced">Feed synced with your YouTube account</string>
     <string name="open_channel">Go to channel</string>
+    <string name="player_settings">Player settings</string>
+    <string name="audio_language">Audio language / Dubbing</string>
+    <string name="audio_original">original</string>
+    <string name="audio_single_track">This video has only one audio track.</string>
+    <string name="subtitles">Subtitles / CC</string>
+    <string name="subtitle_auto_generated">auto-generated</string>
+    <string name="subtitle_translate">Auto-translate subtitles</string>
+    <string name="off">Off</string>
+    <string name="sleep_timer">Sleep timer</string>
+    <string name="sleep_minutes">%1$d min</string>
+    <string name="sleep_end_of_video">End of video</string>
+    <string name="search_empty_title">Search YouTube</string>
+    <string name="search_clear_history">Clear history</string>
+    <string name="search_fill">Edit query</string>
 </resources>

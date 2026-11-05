@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -12,6 +13,14 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+
+/** Player choices remembered across videos. Empty audio language = original track. */
+data class PlayerPrefs(
+    val speed: Float = 1f,
+    val audioLanguage: String = "",
+    val subtitleLanguage: String = "",
+    val subtitleTranslate: String = ""
+)
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
@@ -65,6 +74,11 @@ object SettingsManager {
     private val KEY_BLUR_ENABLED = booleanPreferencesKey("blur_enabled")
     private val KEY_LIQUID_GLASS = booleanPreferencesKey("liquid_glass")
     private val KEY_LIVE_BLUR = booleanPreferencesKey("live_blur")
+
+    private val KEY_SPEED = floatPreferencesKey("player_speed")
+    private val KEY_AUDIO_LANG = stringPreferencesKey("player_audio_lang")
+    private val KEY_SUB_LANG = stringPreferencesKey("player_sub_lang")
+    private val KEY_SUB_TRANSLATE = stringPreferencesKey("player_sub_translate")
 
     private lateinit var store: DataStore<Preferences>
 
@@ -127,5 +141,33 @@ object SettingsManager {
 
     suspend fun setLiveBlur(enabled: Boolean) {
         store.edit { it[KEY_LIVE_BLUR] = enabled }
+    }
+
+    val playerPrefs: Flow<PlayerPrefs> by lazy {
+        store.data.map { p ->
+            PlayerPrefs(
+                speed = p[KEY_SPEED] ?: 1f,
+                audioLanguage = p[KEY_AUDIO_LANG].orEmpty(),
+                subtitleLanguage = p[KEY_SUB_LANG].orEmpty(),
+                subtitleTranslate = p[KEY_SUB_TRANSLATE].orEmpty()
+            )
+        }
+    }
+
+    suspend fun setPlayerSpeed(speed: Float) {
+        store.edit { it[KEY_SPEED] = speed }
+    }
+
+    /** "" = always play the original audio track. */
+    suspend fun setAudioLanguage(tag: String) {
+        store.edit { it[KEY_AUDIO_LANG] = tag }
+    }
+
+    /** "" = subtitles off. */
+    suspend fun setSubtitle(language: String, translateTo: String) {
+        store.edit {
+            it[KEY_SUB_LANG] = language
+            it[KEY_SUB_TRANSLATE] = translateTo
+        }
     }
 }

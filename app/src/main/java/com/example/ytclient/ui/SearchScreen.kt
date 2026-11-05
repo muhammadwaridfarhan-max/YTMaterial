@@ -29,11 +29,13 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.CallMade
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -52,6 +54,13 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -79,6 +88,7 @@ fun SearchScreen(
     val hasResults = vm.searchState != null
     // Editing = keyboard up (or nothing searched yet): show suggestions/history instead of results.
     val editing = focused || !hasResults
+    val glassOn = liquidGlassOn()
 
     LaunchedEffect(Unit) { if (!hasResults) requester.requestFocus() }
 
@@ -151,7 +161,10 @@ fun SearchScreen(
                 Modifier
                     .size(52.dp)
                     .clip(CircleShape)
-                    .background(scheme.primaryContainer)
+                    .then(
+                        if (glassOn) Modifier.glassOr(CircleShape, scheme.primaryContainer, 1.2f)
+                        else Modifier.background(scheme.primaryContainer)
+                    )
                     .clickable {
                         vm.runSearch()
                         focus.clearFocus()
@@ -161,7 +174,7 @@ fun SearchScreen(
                 Icon(
                     Icons.Filled.Search,
                     contentDescription = stringResource(R.string.search),
-                    tint = scheme.onPrimaryContainer
+                    tint = if (glassOn) scheme.primary else scheme.onPrimaryContainer
                 )
             }
         }
@@ -170,6 +183,9 @@ fun SearchScreen(
             SuggestionList(vm, onPick = {
                 vm.runSearch(it)
                 focus.clearFocus()
+            }, onFill = {
+                vm.onQueryChange("$it ")
+                requester.requestFocus()
             })
         } else {
             PullToRefreshBox(
@@ -218,17 +234,38 @@ fun SearchScreen(
 }
 
 @Composable
-private fun SuggestionList(vm: MainViewModel, onPick: (String) -> Unit) {
+private fun SuggestionList(vm: MainViewModel, onPick: (String) -> Unit, onFill: (String) -> Unit) {
     val scheme = MaterialTheme.colorScheme
     val typing = vm.query.isNotBlank()
     val rows = (if (typing) vm.suggestions else vm.history).distinct()
+    val typed = vm.query.trim()
+    val boldStyle = SpanStyle(fontWeight = FontWeight.SemiBold, color = scheme.onSurface)
+    val dimColor = scheme.onSurfaceVariant
+    if (!typing && rows.isEmpty()) {
+        SearchEmptyState(
+            Icons.Filled.Search,
+            stringResource(R.string.search_empty_title),
+            stringResource(R.string.search_empty)
+        )
+        return
+    }
     LazyColumn(
         Modifier
             .fillMaxSize()
             .navigationBarsPadding(),
-        contentPadding = PaddingValues(bottom = 16.dp)
+        contentPadding = PaddingValues(top = 4.dp, bottom = 16.dp)
     ) {
-        if (!typing && rows.isNotEmpty()) {
+        if (typing && vm.suggestionsLoading && rows.isEmpty()) {
+            item(key = "suggest-loading") {
+                LinearProgressIndicator(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 12.dp)
+                        .clip(CircleShape)
+                )
+            }
+        }
+        if (!typing) {
             item(key = "history-title") {
                 Row(
                     Modifier
@@ -243,17 +280,25 @@ private fun SuggestionList(vm: MainViewModel, onPick: (String) -> Unit) {
                         modifier = Modifier.weight(1f)
                     )
                     TextButton(onClick = vm::clearHistory) {
-                        Text(stringResource(R.string.search_clear_all))
+                        Text(stringResource(R.string.search_clear_history))
                     }
                 }
             }
         }
         items(rows, key = { (if (typing) "s:" else "h:") + it }) { text ->
+            val label = if (typing && text.startsWith(typed, ignoreCase = true)) {
+                buildAnnotatedString {
+                    withStyle(SpanStyle(color = dimColor)) { append(text.substring(0, typed.length)) }
+                    withStyle(boldStyle) { append(text.substring(typed.length)) }
+                }
+            } else AnnotatedString(text)
             Row(
                 Modifier
                     .fillMaxWidth()
+                    .padding(horizontal = 8.dp)
+                    .clip(RoundedCornerShape(14.dp))
                     .clickable { onPick(text) }
-                    .padding(horizontal = 20.dp, vertical = 4.dp)
+                    .padding(horizontal = 12.dp, vertical = 4.dp)
                     .height(44.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -265,7 +310,7 @@ private fun SuggestionList(vm: MainViewModel, onPick: (String) -> Unit) {
                 )
                 Spacer(Modifier.width(16.dp))
                 Text(
-                    text,
+                    label,
                     style = MaterialTheme.typography.bodyLarge,
                     color = scheme.onSurface,
                     maxLines = 1,
@@ -282,7 +327,42 @@ private fun SuggestionList(vm: MainViewModel, onPick: (String) -> Unit) {
                         )
                     }
                 }
+                IconButton(onClick = { onFill(text) }) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.CallMade,
+                        contentDescription = stringResource(R.string.search_fill),
+                        tint = scheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .size(18.dp)
+                            .graphicsLayer { rotationZ = -90f }
+                    )
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun SearchEmptyState(icon: ImageVector, title: String, body: String) {
+    val scheme = MaterialTheme.colorScheme
+    Column(
+        Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Box(
+            Modifier
+                .size(88.dp)
+                .glassOr(CircleShape, scheme.surfaceContainerHigh),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, contentDescription = null, tint = scheme.primary, modifier = Modifier.size(40.dp))
+        }
+        Spacer(Modifier.height(16.dp))
+        Text(title, style = MaterialTheme.typography.titleMedium, color = scheme.onSurface)
+        Spacer(Modifier.height(6.dp))
+        Text(body, style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant)
     }
 }
