@@ -131,9 +131,10 @@ fun AmbientGlow(
 ) {
     val context = LocalContext.current
     val fallback = MaterialTheme.colorScheme.primary
+    val fallback2 = MaterialTheme.colorScheme.tertiary
     val surface = MaterialTheme.colorScheme.surface
     var c1 by remember { mutableStateOf(fallback) }
-    var c2 by remember { mutableStateOf(MaterialTheme.colorScheme.tertiary) }
+    var c2 by remember { mutableStateOf(fallback2) }
 
     LaunchedEffect(imageUrl) {
         if (imageUrl.isNullOrBlank()) return@LaunchedEffect
