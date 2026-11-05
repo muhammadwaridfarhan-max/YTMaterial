@@ -47,9 +47,14 @@ fun AccountCard() {
     var errorRes by remember { mutableStateOf<Int?>(null) }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .glassEdge(MaterialTheme.shapes.extraLarge),
         shape = MaterialTheme.shapes.extraLarge,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+        colors = CardDefaults.cardColors(
+            containerColor = glassTint(),
+            contentColor = MaterialTheme.colorScheme.onSurface
+        )
     ) {
         Column(Modifier.padding(20.dp)) {
             val u = user
@@ -62,7 +67,7 @@ fun AccountCard() {
                 Text(
                     stringResource(R.string.login_subtitle),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(16.dp))
                 Button(
@@ -118,7 +123,7 @@ fun AccountCard() {
                         Text(
                             u.email,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )

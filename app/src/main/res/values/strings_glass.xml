@@ -4,4 +4,7 @@
     <string name="liquid_glass_hint">Bars bend what is behind them, like MeeTube (full lens on Android 13+)</string>
     <string name="live_blur">Live blur</string>
     <string name="live_blur_hint">Keep bars blurred while scrolling (uses more GPU)</string>
+    <string name="section_appearance">Appearance</string>
+    <string name="section_playback">Playback</string>
+    <string name="section_glass">Glass &amp; blur</string>
 </resources>

@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -59,6 +60,7 @@ import com.example.ytclient.R
 import com.example.ytclient.data.VideoItem
 import com.example.ytclient.ui.LiveDot
 import com.example.ytclient.ui.pressScale
+import com.example.ytclient.ui.glassHighlightBrush
 
 /**
  * MeeTube-style feed card: a big rounded thumbnail with no card frame, then avatar, title, meta
@@ -98,6 +100,7 @@ fun VideoCard(
                 .aspectRatio(16f / 9f)
                 .clip(RoundedCornerShape(20.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                .border(1.dp, glassHighlightBrush(), RoundedCornerShape(20.dp))
                 .combinedClickable(
                     interactionSource = interaction,
                     indication = null,

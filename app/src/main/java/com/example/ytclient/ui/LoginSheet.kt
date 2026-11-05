@@ -84,7 +84,7 @@ fun LoginSheet(onDismiss: () -> Unit) {
         }
     }
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = glassSheetColor()) {
         AnimatedContent(
             targetState = state,
             transitionSpec = {

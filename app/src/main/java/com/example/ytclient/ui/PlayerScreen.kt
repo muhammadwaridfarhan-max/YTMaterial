@@ -204,6 +204,16 @@ fun PlayerScreen(
             },
         color = MaterialTheme.colorScheme.surface
     ) {
+      Box(Modifier.fillMaxSize()) {
+        if (!fullscreen) {
+            // Ambient light: blurred, palette-tinted glow of the thumbnail behind the details.
+            AmbientGlow(
+                imageUrl = item.thumbnail,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(520.dp)
+            )
+        }
         Column(Modifier.fillMaxSize()) {
             val areaModifier = if (fullscreen) {
                 Modifier
@@ -377,11 +387,12 @@ fun PlayerScreen(
                 }
             }
         }
+      }
     }
 
     if (showQualitySheet) {
         val streams = controller.streams
-        ModalBottomSheet(onDismissRequest = { showQualitySheet = false }) {
+        ModalBottomSheet(onDismissRequest = { showQualitySheet = false }, containerColor = glassSheetColor()) {
             Column(Modifier.padding(bottom = 32.dp)) {
                 SheetTitle(stringResource(R.string.quality))
                 if (streams == null) {
@@ -410,7 +421,7 @@ fun PlayerScreen(
     }
 
     if (showSpeedSheet) {
-        ModalBottomSheet(onDismissRequest = { showSpeedSheet = false }) {
+        ModalBottomSheet(onDismissRequest = { showSpeedSheet = false }, containerColor = glassSheetColor()) {
             Column(Modifier.padding(bottom = 32.dp)) {
                 SheetTitle(stringResource(R.string.playback_speed))
                 SPEEDS.forEach { sp ->
@@ -425,7 +436,7 @@ fun PlayerScreen(
 
     if (showDownloadSheet) {
         val streams = controller.streams
-        ModalBottomSheet(onDismissRequest = { showDownloadSheet = false }) {
+        ModalBottomSheet(onDismissRequest = { showDownloadSheet = false }, containerColor = glassSheetColor()) {
             Column(Modifier.padding(bottom = 32.dp)) {
                 SheetTitle(stringResource(R.string.download))
                 val progress = VideoDownloader.progress

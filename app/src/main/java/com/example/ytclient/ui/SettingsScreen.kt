@@ -22,6 +22,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Animation
+import androidx.compose.material.icons.filled.BlurOn
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.DarkMode
@@ -91,139 +94,75 @@ fun YouScreen(vm: MainViewModel? = null, onSignIn: () -> Unit = {}) {
         item {
             Text(
                 stringResource(R.string.nav_you),
-                style = MaterialTheme.typography.headlineSmall
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(start = 4.dp)
             )
             Spacer(Modifier.height(12.dp))
-            val signedIn by AuthManager.signedIn.collectAsState(initial = false)
-            val account by com.example.ytclient.auth.AccountManager.user.collectAsState(initial = null)
-            Surface(
-                shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val photo = if (signedIn) account?.photoUrl else null
-                    if (photo != null) {
-                        // Photo of the signed-in Google/YouTube account.
-                        coil.compose.AsyncImage(
-                            model = photo,
-                            contentDescription = null,
-                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                            modifier = Modifier
-                                .size(56.dp)
-                                .clip(androidx.compose.foundation.shape.CircleShape)
-                        )
-                    } else {
-                        Icon(
-                            Icons.Filled.AccountCircle,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(56.dp)
-                        )
-                    }
-                    Column(
-                        Modifier
-                            .weight(1f)
-                            .padding(horizontal = 12.dp)
-                    ) {
-                        Text(
-                            if (signedIn) account?.name?.ifBlank { null }
-                                ?: stringResource(R.string.signed_in)
-                            else stringResource(R.string.sign_in),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            maxLines = 1,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                        )
-                        Text(
-                            if (signedIn) account?.email?.ifBlank { null }
-                                ?: stringResource(R.string.account_synced)
-                            else stringResource(R.string.login_hint),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
-                            maxLines = 1,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                        )
-                        if (signedIn) {
-                            Text(
-                                stringResource(R.string.account_synced),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                            )
-                        }
-                    }
-                    if (signedIn) {
-                        TextButton(onClick = { scope.launch { AuthManager.signOut() } }) {
-                            Text(stringResource(R.string.sign_out))
-                        }
-                    } else {
-                        Button(onClick = onSignIn) { Text(stringResource(R.string.sign_in_short)) }
-                    }
-                }
+            AccountHeader(onSignIn = onSignIn, onSignOut = { scope.launch { AuthManager.signOut() } })
+            Spacer(Modifier.height(20.dp))
+        }
+        item {
+            GlassSection(stringResource(R.string.section_appearance)) {
+                SettingsItem(
+                    icon = Icons.Filled.DarkMode,
+                    title = stringResource(R.string.theme),
+                    value = themeLabel(settings.themeMode)
+                ) { dialog = SettingsDialog.THEME }
+                SectionDivider()
+                SettingsItem(
+                    icon = Icons.Filled.Palette,
+                    title = stringResource(R.string.color_source),
+                    value = colorLabel(settings)
+                ) { dialog = SettingsDialog.COLOR }
+                SectionDivider()
+                SettingsItem(
+                    icon = Icons.Filled.Translate,
+                    title = stringResource(R.string.language),
+                    value = settings.language.display
+                ) { dialog = SettingsDialog.LANGUAGE }
             }
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(20.dp))
         }
         item {
-            SettingsItem(
-                icon = Icons.Filled.DarkMode,
-                title = stringResource(R.string.theme),
-                value = themeLabel(settings.themeMode)
-            ) { dialog = SettingsDialog.THEME }
+            GlassSection(stringResource(R.string.section_playback)) {
+                SettingsItem(
+                    icon = Icons.Filled.Hd,
+                    title = stringResource(R.string.default_resolution),
+                    value = resolutionLabel(settings.resolution)
+                ) { dialog = SettingsDialog.RESOLUTION }
+            }
+            Spacer(Modifier.height(20.dp))
         }
         item {
-            SettingsItem(
-                icon = Icons.Filled.Palette,
-                title = stringResource(R.string.color_source),
-                value = colorLabel(settings)
-            ) { dialog = SettingsDialog.COLOR }
-        }
-        item {
-            SettingsItem(
-                icon = Icons.Filled.Translate,
-                title = stringResource(R.string.language),
-                value = settings.language.display
-            ) { dialog = SettingsDialog.LANGUAGE }
-        }
-        item {
-            SettingsItem(
-                icon = Icons.Filled.Hd,
-                title = stringResource(R.string.default_resolution),
-                value = resolutionLabel(settings.resolution)
-            ) { dialog = SettingsDialog.RESOLUTION }
-        }
-        item {
-            SettingsItem(
-                icon = Icons.Filled.DarkMode,
-                title = stringResource(R.string.blur_strength),
-                value = if (settings.blurStrength <= 12) stringResource(R.string.blur_light) else stringResource(R.string.blur_heavy)
-            ) { dialog = SettingsDialog.BLUR }
-        }
-        item {
-            val checkedLabel = if (settings.blurEnabled) stringResource(R.string.blur_enabled_on) else stringResource(R.string.blur_enabled_off)
-            SettingsItem(
-                icon = Icons.Filled.CheckBox,
-                title = stringResource(R.string.blur_toggle),
-                value = checkedLabel
-            ) { dialog = SettingsDialog.BLUR_ENABLED }
-        }
-        item {
-            SwitchItem(
-                icon = Icons.Filled.Palette,
-                title = stringResource(R.string.liquid_glass),
-                subtitle = stringResource(R.string.liquid_glass_hint),
-                checked = settings.liquidGlass
-            ) { scope.launch { SettingsManager.setLiquidGlass(it) } }
-        }
-        item {
-            SwitchItem(
-                icon = Icons.Filled.DarkMode,
-                title = stringResource(R.string.live_blur),
-                subtitle = stringResource(R.string.live_blur_hint),
-                checked = settings.liveBlur
-            ) { scope.launch { SettingsManager.setLiveBlur(it) } }
+            GlassSection(stringResource(R.string.section_glass)) {
+                SettingsItem(
+                    icon = Icons.Filled.BlurOn,
+                    title = stringResource(R.string.blur_strength),
+                    value = if (settings.blurStrength <= 12) stringResource(R.string.blur_light) else stringResource(R.string.blur_heavy)
+                ) { dialog = SettingsDialog.BLUR }
+                SectionDivider()
+                val checkedLabel = if (settings.blurEnabled) stringResource(R.string.blur_enabled_on) else stringResource(R.string.blur_enabled_off)
+                SettingsItem(
+                    icon = Icons.Filled.CheckBox,
+                    title = stringResource(R.string.blur_toggle),
+                    value = checkedLabel
+                ) { dialog = SettingsDialog.BLUR_ENABLED }
+                SectionDivider()
+                SwitchItem(
+                    icon = Icons.Filled.WaterDrop,
+                    title = stringResource(R.string.liquid_glass),
+                    subtitle = stringResource(R.string.liquid_glass_hint),
+                    checked = settings.liquidGlass
+                ) { scope.launch { SettingsManager.setLiquidGlass(it) } }
+                SectionDivider()
+                SwitchItem(
+                    icon = Icons.Filled.Animation,
+                    title = stringResource(R.string.live_blur),
+                    subtitle = stringResource(R.string.live_blur_hint),
+                    checked = settings.liveBlur
+                ) { scope.launch { SettingsManager.setLiveBlur(it) } }
+            }
+            Spacer(Modifier.height(12.dp))
         }
     }
 
@@ -298,8 +237,8 @@ private fun SettingsItem(
             Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.size(16.dp))
+            IconBadge(icon)
+            Spacer(Modifier.size(14.dp))
             Column(Modifier.weight(1f)) {
                 Text(title, style = MaterialTheme.typography.bodyLarge)
                 Text(
@@ -348,6 +287,8 @@ private fun BlurEnabledDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = glassSheetColor(),
+        modifier = Modifier.glassEdge(androidx.compose.material3.AlertDialogDefaults.shape),
         title = { Text(stringResource(R.string.blur_toggle)) },
         text = {
             Column {
@@ -396,6 +337,8 @@ private fun ThemeDialog(
     val modes = ThemeMode.entries
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = glassSheetColor(),
+        modifier = Modifier.glassEdge(androidx.compose.material3.AlertDialogDefaults.shape),
         title = { Text(stringResource(R.string.theme)) },
         text = {
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
@@ -431,6 +374,8 @@ private fun ColorDialog(
     var hexInput by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = glassSheetColor(),
+        modifier = Modifier.glassEdge(androidx.compose.material3.AlertDialogDefaults.shape),
         title = { Text(stringResource(R.string.color_source)) },
         text = {
             Column {
@@ -538,6 +483,8 @@ private fun LanguageDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = glassSheetColor(),
+        modifier = Modifier.glassEdge(androidx.compose.material3.AlertDialogDefaults.shape),
         title = { Text(stringResource(R.string.language)) },
         text = {
             Column {
@@ -575,6 +522,8 @@ private fun ResolutionDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = glassSheetColor(),
+        modifier = Modifier.glassEdge(androidx.compose.material3.AlertDialogDefaults.shape),
         title = { Text(stringResource(R.string.default_resolution)) },
         text = {
             Column {
@@ -608,6 +557,8 @@ private fun BlurDialog(
     var value by remember { mutableFloatStateOf(current.toFloat()) }
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = glassSheetColor(),
+        modifier = Modifier.glassEdge(androidx.compose.material3.AlertDialogDefaults.shape),
         title = { Text(stringResource(R.string.blur_strength)) },
         text = {
             Column {
@@ -651,8 +602,8 @@ private fun SwitchItem(
             Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.size(16.dp))
+            IconBadge(icon)
+            Spacer(Modifier.size(14.dp))
             Column(Modifier.weight(1f)) {
                 Text(title, style = MaterialTheme.typography.bodyLarge)
                 Text(
@@ -663,6 +614,120 @@ private fun SwitchItem(
             }
             Spacer(Modifier.size(8.dp))
             Switch(checked = checked, onCheckedChange = onChange)
+        }
+    }
+}
+
+@Composable
+private fun IconBadge(icon: ImageVector) {
+    Box(
+        Modifier
+            .size(36.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+    }
+}
+
+@Composable
+private fun SectionDivider() {
+    androidx.compose.material3.HorizontalDivider(
+        modifier = Modifier.padding(start = 62.dp, end = 16.dp),
+        thickness = 0.6.dp,
+        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+    )
+}
+
+/** Glass account header: large avatar with a gradient ring, name/email, sign in/out action. */
+@Composable
+private fun AccountHeader(onSignIn: () -> Unit, onSignOut: () -> Unit) {
+    val signedIn by AuthManager.signedIn.collectAsState(initial = false)
+    val account by com.example.ytclient.auth.AccountManager.user.collectAsState(initial = null)
+    val scheme = MaterialTheme.colorScheme
+    GlassCard(shape = RoundedCornerShape(28.dp), contentPadding = 18.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier
+                    .size(64.dp)
+                    .clip(CircleShape)
+                    .background(
+                        androidx.compose.ui.graphics.Brush.sweepGradient(
+                            listOf(scheme.primary, scheme.tertiary, scheme.secondary, scheme.primary)
+                        )
+                    )
+                    .padding(3.dp)
+                    .clip(CircleShape)
+                    .background(scheme.surfaceContainerHigh),
+                contentAlignment = Alignment.Center
+            ) {
+                val photo = if (signedIn) account?.photoUrl else null
+                if (photo != null) {
+                    coil.compose.AsyncImage(
+                        model = photo,
+                        contentDescription = null,
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        modifier = Modifier
+                            .size(58.dp)
+                            .clip(CircleShape)
+                    )
+                } else {
+                    Icon(
+                        Icons.Filled.AccountCircle,
+                        contentDescription = null,
+                        tint = scheme.onSurfaceVariant,
+                        modifier = Modifier.size(52.dp)
+                    )
+                }
+            }
+            Column(
+                Modifier
+                    .weight(1f)
+                    .padding(horizontal = 14.dp)
+            ) {
+                Text(
+                    if (signedIn) account?.name?.ifBlank { null } ?: stringResource(R.string.signed_in)
+                    else stringResource(R.string.sign_in),
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
+                Text(
+                    if (signedIn) account?.email?.ifBlank { null } ?: stringResource(R.string.account_synced)
+                    else stringResource(R.string.login_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = scheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
+            }
+        }
+        if (signedIn) {
+            Spacer(Modifier.height(12.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Filled.Check,
+                    contentDescription = null,
+                    tint = scheme.primary,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(Modifier.size(6.dp))
+                Text(
+                    stringResource(R.string.account_synced),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = scheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f)
+                )
+                androidx.compose.material3.OutlinedButton(onClick = onSignOut) {
+                    Text(stringResource(R.string.sign_out))
+                }
+            }
+        } else {
+            Spacer(Modifier.height(12.dp))
+            Button(onClick = onSignIn, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.sign_in_short))
+            }
         }
     }
 }

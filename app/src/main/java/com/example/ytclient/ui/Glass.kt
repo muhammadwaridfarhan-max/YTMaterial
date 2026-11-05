@@ -103,7 +103,7 @@ fun Modifier.glass(
     val base = this
         .shadow(elevation, shape)
         .clip(shape)
-        .border(0.8.dp, scheme.outlineVariant.copy(alpha = 0.55f), shape)
+        .border(0.8.dp, glassHighlightBrush(), shape)
     return if (hazeState != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         base.hazeEffect(
             state = hazeState,
@@ -118,7 +118,8 @@ fun Modifier.glass(
             this.inputScale = HazeInputScale.Fixed(0.5f)
         }
     } else {
-        base.background(scheme.surfaceContainerHigh)
+        // No RenderEffect before Android 12: near-opaque tint keeps text readable.
+        base.background(glassTint())
     }
 }
 

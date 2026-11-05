@@ -29,6 +29,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.remember
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -171,8 +173,10 @@ private fun GlassCircleButton(
     description: String,
     content: @Composable () -> Unit
 ) {
+    val interaction = remember { MutableInteractionSource() }
     Box(
         Modifier
+            .pressScale(interaction, 0.88f)
             .graphicsLayer {
                 val s = 1f - 0.12f * collapse()
                 scaleX = s
@@ -185,7 +189,7 @@ private fun GlassCircleButton(
             )
     ) {
         GlassContent {
-            IconButton(onClick = onClick, modifier = Modifier.size(44.dp)) { content() }
+            IconButton(onClick = onClick, interactionSource = interaction, modifier = Modifier.size(44.dp)) { content() }
         }
     }
 }
