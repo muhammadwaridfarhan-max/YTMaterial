@@ -208,3 +208,21 @@ fun GlassSection(
         GlassCard(shape = RoundedCornerShape(24.dp), contentPadding = 4.dp, content = content)
     }
 }
+
+/** True when the Liquid Glass setting is on; screens use it to switch plain surfaces to glass. */
+@Composable
+fun liquidGlassOn(): Boolean = LocalGlassStyle.current.liquid
+
+/**
+ * Glass when Liquid Glass is on, otherwise the plain [fallback] background (the old look).
+ * Reads composables at call time only, never inside lambdas.
+ */
+@Composable
+fun Modifier.glassOr(shape: Shape, fallback: Color, strength: Float = 1f): Modifier {
+    return if (liquidGlassOn()) {
+        val tint = glassTint(strength)
+        this.glassSurface(shape, tint)
+    } else {
+        this.clip(shape).background(fallback, shape)
+    }
+}

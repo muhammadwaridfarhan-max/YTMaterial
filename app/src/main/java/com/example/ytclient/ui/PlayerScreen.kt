@@ -224,7 +224,8 @@ fun PlayerScreen(
                     .fillMaxWidth()
                     .background(Color.Black)
                     .statusBarsPadding()
-                    .aspectRatio(16f / 9f)
+                    // Slightly taller than 16:9 in portrait: bigger stage, room for the overlay controls.
+                    .aspectRatio(16f / 10f)
             }
             Box(areaModifier) {
                 AndroidView(
@@ -589,7 +590,7 @@ private fun PlayerControls(
             Box(
                 Modifier
                     .padding(horizontal = 48.dp)
-                    .size(72.dp)
+                    .size(56.dp)
                     .clip(CircleShape)
                     .background(Color.White.copy(alpha = 0.18f)),
                 contentAlignment = Alignment.Center
@@ -598,7 +599,7 @@ private fun PlayerControls(
                     if (flashSide >= 0) Icons.Filled.Forward10 else Icons.Filled.Replay10,
                     contentDescription = null,
                     tint = Color.White,
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(28.dp)
                 )
             }
         }
@@ -652,7 +653,7 @@ private fun PlayerControls(
                             else Icons.Filled.KeyboardArrowDown,
                             contentDescription = stringResource(R.string.close),
                             tint = Color.White,
-                            modifier = Modifier.size(28.dp)
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                     if (fullscreen) {
@@ -678,20 +679,27 @@ private fun PlayerControls(
                 }
 
                 if (!(controller.isLoading || controller.isBuffering)) {
+                    val controlsGlass = if (liquidGlassOn()) {
+                        Modifier
+                            .glassSurface(CircleShape, Color.Black.copy(alpha = 0.28f))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    } else Modifier
                     Row(
-                        Modifier.align(Alignment.Center),
+                        Modifier
+                            .align(Alignment.Center)
+                            .then(controlsGlass),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(28.dp)
+                        horizontalArrangement = Arrangement.spacedBy(18.dp)
                     ) {
                         IconButton(onClick = { controller.seekBy(-10_000L); interaction++ }) {
                             Icon(
                                 Icons.Filled.Replay10, contentDescription = null,
-                                tint = Color.White, modifier = Modifier.size(34.dp)
+                                tint = Color.White, modifier = Modifier.size(26.dp)
                             )
                         }
                         Box(
                             Modifier
-                                .size(64.dp)
+                                .size(52.dp)
                                 .clip(CircleShape)
                                 .background(Color.White.copy(alpha = 0.2f)),
                             contentAlignment = Alignment.Center
@@ -707,14 +715,14 @@ private fun PlayerControls(
                                         if (controller.isPlayingState) R.string.pause else R.string.play
                                     ),
                                     tint = Color.White,
-                                    modifier = Modifier.size(40.dp)
+                                    modifier = Modifier.size(30.dp)
                                 )
                             }
                         }
                         IconButton(onClick = { controller.seekBy(10_000L); interaction++ }) {
                             Icon(
                                 Icons.Filled.Forward10, contentDescription = null,
-                                tint = Color.White, modifier = Modifier.size(34.dp)
+                                tint = Color.White, modifier = Modifier.size(26.dp)
                             )
                         }
                     }
@@ -757,7 +765,8 @@ private fun PlayerControls(
                             Icon(
                                 if (fullscreen) Icons.Filled.FullscreenExit else Icons.Filled.Fullscreen,
                                 contentDescription = stringResource(R.string.fullscreen),
-                                tint = Color.White
+                                tint = Color.White,
+                                modifier = Modifier.size(22.dp)
                             )
                         }
                     }

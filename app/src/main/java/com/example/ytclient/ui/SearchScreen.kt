@@ -98,8 +98,7 @@ fun SearchScreen(
                 Modifier
                     .weight(1f)
                     .height(52.dp)
-                    .clip(RoundedCornerShape(26.dp))
-                    .background(scheme.surfaceContainerHigh),
+                    .glassOr(RoundedCornerShape(26.dp), scheme.surfaceContainerHigh),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onBack) {
@@ -186,9 +185,12 @@ fun SearchScreen(
                     modifier = Modifier.fillMaxSize(),
                     bottomPadding = 24.dp,
                     header = {
+                        val glassChips = liquidGlassOn()
+                        val chipGlass = glassTint()
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             items(SearchFilter.entries.toList(), key = { it.name }) { f ->
                                 FilterChip(
+                    colors = if (glassChips) androidx.compose.material3.FilterChipDefaults.filterChipColors(containerColor = chipGlass) else androidx.compose.material3.FilterChipDefaults.filterChipColors(),
                                     selected = vm.searchFilter == f,
                                     onClick = { vm.selectSearchFilter(f) },
                                     label = {

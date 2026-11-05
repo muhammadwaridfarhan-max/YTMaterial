@@ -61,6 +61,7 @@ import com.example.ytclient.data.VideoItem
 import com.example.ytclient.ui.LiveDot
 import com.example.ytclient.ui.pressScale
 import com.example.ytclient.ui.glassHighlightBrush
+import com.example.ytclient.ui.glassSurface
 
 /**
  * MeeTube-style feed card: a big rounded thumbnail with no card frame, then avatar, title, meta
@@ -89,10 +90,17 @@ fun VideoCard(
         listOfNotNull(item.channel.ifBlank { null }, views, item.uploaded).joinToString(" • ")
     }
 
+    val glassCard = com.example.ytclient.ui.liquidGlassOn()
+    val cardGlass = if (glassCard) {
+        Modifier
+            .glassSurface(RoundedCornerShape(26.dp))
+            .padding(6.dp)
+    } else Modifier
     Column(
         modifier
             .fillMaxWidth()
             .pressScale(interaction, 0.97f)
+            .then(cardGlass)
     ) {
         Box(
             Modifier

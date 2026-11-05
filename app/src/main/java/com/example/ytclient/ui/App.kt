@@ -135,11 +135,11 @@ fun App(vm: MainViewModel = viewModel()) {
     val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val miniVisible = controller.current != null && !controller.expanded
     val miniExtra by androidx.compose.animation.core.animateDpAsState(
-        targetValue = if (miniVisible) 76.dp else 0.dp,
+        targetValue = if (miniVisible) 84.dp else 0.dp,
         animationSpec = spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow),
         label = "miniInset"
     )
-    val insets = FloatingInsets(statusTop + 72.dp, navBottom + 92.dp + miniExtra)
+    val insets = FloatingInsets(statusTop + 72.dp, navBottom + 100.dp + miniExtra)
 
     // Floating top bar: shrinks to a compact pill while the page scrolls, grows back on scroll up.
     // `collapse` is only read in layout/draw lambdas, so scrolling never recomposes this screen.
@@ -253,7 +253,7 @@ fun App(vm: MainViewModel = viewModel()) {
                         .align(Alignment.BottomCenter)
                         .navigationBarsPadding()
                         .padding(horizontal = 20.dp)
-                        .padding(bottom = 84.dp)
+                        .padding(bottom = 92.dp)
                 )
                 FloatingNavBar(
                     tabs = tabs,

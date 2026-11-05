@@ -292,9 +292,12 @@ private fun ChannelHeader(
             ) { Text(stringResource(R.string.subscribe)) }
         }
         Spacer(Modifier.height(10.dp))
+        val glassChips = liquidGlassOn()
+        val chipGlass = glassTint()
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(tabs, key = { it.name }) { tab ->
                 FilterChip(
+                    colors = if (glassChips) androidx.compose.material3.FilterChipDefaults.filterChipColors(containerColor = chipGlass) else androidx.compose.material3.FilterChipDefaults.filterChipColors(),
                     selected = tab == selected,
                     onClick = { onSelect(tab) },
                     label = {

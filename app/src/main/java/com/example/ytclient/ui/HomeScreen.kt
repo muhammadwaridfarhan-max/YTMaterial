@@ -3,6 +3,7 @@
 package com.example.ytclient.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.runtime.getValue
@@ -77,8 +78,11 @@ fun HomeScreen(vm: MainViewModel, onPlay: (VideoItem) -> Unit, onChannelClick: (
 @Composable
 private fun GlassChip(label: String, selected: Boolean, onClick: () -> Unit) {
     val scheme = androidx.compose.material3.MaterialTheme.colorScheme
+    val glassOn = liquidGlassOn()
+    val idleBg = if (glassOn) glassTint() else scheme.surfaceContainerHigh
+    val edge = glassHighlightBrush()
     val container by androidx.compose.animation.animateColorAsState(
-        targetValue = if (selected) scheme.primary else scheme.surfaceContainerHigh,
+        targetValue = if (selected) scheme.primary else idleBg,
         animationSpec = androidx.compose.animation.core.tween(180),
         label = "chipBg"
     )
@@ -108,6 +112,10 @@ private fun GlassChip(label: String, selected: Boolean, onClick: () -> Unit) {
             .pressScale(interaction, 0.94f)
             .clip(androidx.compose.foundation.shape.CircleShape)
             .background(container)
+            .then(
+                if (glassOn && !selected) Modifier.border(1.dp, edge, androidx.compose.foundation.shape.CircleShape)
+                else Modifier
+            )
             .clickable(interactionSource = interaction, indication = null) {
                 haptic.performHapticFeedback(
                     androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove
