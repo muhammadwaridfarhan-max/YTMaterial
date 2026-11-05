@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -69,7 +70,10 @@ fun HomeScreen(vm: MainViewModel, onPlay: (VideoItem) -> Unit, onChannelClick: (
     }
 }
 
-/** Rounded filter chip: Material You primary when selected, a soft tonal pill otherwise. */
+/**
+ * Rounded filter chip: Material You primary when selected, a soft tonal pill otherwise. The
+ * selected chip springs up slightly and every tap gives a light haptic tick.
+ */
 @Composable
 private fun GlassChip(label: String, selected: Boolean, onClick: () -> Unit) {
     val scheme = androidx.compose.material3.MaterialTheme.colorScheme
@@ -83,6 +87,12 @@ private fun GlassChip(label: String, selected: Boolean, onClick: () -> Unit) {
         animationSpec = androidx.compose.animation.core.tween(180),
         label = "chipFg"
     )
+    val bump by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (selected) 1.04f else 1f,
+        animationSpec = PopSpring,
+        label = "chipBump"
+    )
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     val interaction = androidx.compose.runtime.remember {
         androidx.compose.foundation.interaction.MutableInteractionSource()
     }
@@ -91,10 +101,19 @@ private fun GlassChip(label: String, selected: Boolean, onClick: () -> Unit) {
         color = content,
         style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
         modifier = Modifier
+            .graphicsLayer {
+                scaleX = bump
+                scaleY = bump
+            }
             .pressScale(interaction, 0.94f)
             .clip(androidx.compose.foundation.shape.CircleShape)
             .background(container)
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .clickable(interactionSource = interaction, indication = null) {
+                haptic.performHapticFeedback(
+                    androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove
+                )
+                onClick()
+            }
             .padding(horizontal = 18.dp, vertical = 10.dp)
     )
 }

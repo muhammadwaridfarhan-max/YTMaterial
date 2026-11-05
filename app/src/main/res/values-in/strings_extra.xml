@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="copy_link">Salin tautan</string>
+    <string name="link_copied">Tautan disalin</string>
+    <string name="scroll_to_top">Kembali ke atas</string>
+</resources>

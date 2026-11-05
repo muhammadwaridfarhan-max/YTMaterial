@@ -21,6 +21,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -30,10 +31,13 @@ import androidx.compose.ui.unit.dp
 import com.example.ytclient.R
 import com.example.ytclient.data.VideoItem
 import com.example.ytclient.ui.components.VideoCard
+import kotlinx.coroutines.launch
 
 /**
  * Shared video feed. [onLoadMore] is called when the user nears the end, which makes the feed
  * endless; [header] (e.g. filter chips) scrolls with the list and is also shown while loading.
+ * Cards spring in as they appear, loading shows shimmer skeletons, and a scroll-to-top button
+ * pops up once the user is a few screens down.
  */
 @Composable
 fun VideoList(
@@ -51,6 +55,7 @@ fun VideoList(
     when (state) {
         is UiState.Success -> if (state.items.isNotEmpty()) {
             val listState = rememberLazyListState()
+            val scope = rememberCoroutineScope()
             if (onLoadMore != null) {
                 val nearEnd by remember {
                     derivedStateOf {
@@ -64,37 +69,72 @@ fun VideoList(
                     if (nearEnd) onLoadMore()
                 }
             }
-            LazyColumn(
-                state = listState,
-                modifier = modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    start = 12.dp, end = 12.dp,
-                    top = topPadding + 4.dp, bottom = 8.dp + bottomPadding
-                ),
-                verticalArrangement = Arrangement.spacedBy(20.dp)
-            ) {
-                if (header != null) {
-                    item(key = "header", contentType = "header") { header() }
-                }
-                items(state.items, key = { it.url }, contentType = { "video" }) { video ->
-                    VideoCard(video, onClick = { onPlay(video) }, onChannelClick = onChannelClick)
-                }
-                if (loadingMore) {
-                    item(key = "loading-more", contentType = "loading") {
-                        Box(
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 16.dp),
-                            contentAlignment = Alignment.Center
-                        ) { CircularProgressIndicator(Modifier.size(40.dp)) }
+            val showTop by remember { derivedStateOf { listState.firstVisibleItemIndex > 5 } }
+            Box(modifier.fillMaxSize()) {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(
+                        start = 12.dp, end = 12.dp,
+                        top = topPadding + 4.dp, bottom = 8.dp + bottomPadding
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(20.dp)
+                ) {
+                    if (header != null) {
+                        item(key = "header", contentType = "header") { header() }
+                    }
+                    items(state.items, key = { it.url }, contentType = { "video" }) { video ->
+                        VideoCard(
+                            video,
+                            onClick = { onPlay(video) },
+                            onChannelClick = onChannelClick,
+                            modifier = Modifier.popIn()
+                        )
+                    }
+                    if (loadingMore) {
+                        item(key = "loading-more", contentType = "loading") {
+                            Box(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 16.dp),
+                                contentAlignment = Alignment.Center
+                            ) { CircularProgressIndicator(Modifier.size(40.dp)) }
+                        }
                     }
                 }
+                ScrollToTopButton(
+                    visible = showTop,
+                    onClick = {
+                        scope.launch {
+                            // Jump close first so a long feed doesn't take ages to animate back.
+                            if (listState.firstVisibleItemIndex > 10) listState.scrollToItem(6)
+                            listState.animateScrollToItem(0)
+                        }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 16.dp, bottom = bottomPadding + 12.dp)
+                )
             }
         } else {
             Placeholder(modifier, topPadding, header) { Text(stringResource(R.string.no_results)) }
         }
 
-        is UiState.Loading -> Placeholder(modifier, topPadding, header) { CircularProgressIndicator() }
+        is UiState.Loading -> Column(
+            modifier
+                .fillMaxSize()
+                .padding(PaddingValues(start = 12.dp, top = topPadding + 4.dp, end = 12.dp))
+        ) {
+            if (header != null) {
+                Box(Modifier.padding(vertical = 8.dp)) { header() }
+            }
+            Column(
+                Modifier.padding(top = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                repeat(3) { VideoCardSkeleton() }
+            }
+        }
 
         is UiState.Error -> Placeholder(modifier, topPadding, header) {
             Column(

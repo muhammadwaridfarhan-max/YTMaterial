@@ -1,7 +1,15 @@
+@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+
 package com.example.ytclient.ui.components
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,7 +25,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -32,9 +43,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -43,11 +57,15 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.ytclient.R
 import com.example.ytclient.data.VideoItem
+import com.example.ytclient.ui.LiveDot
 import com.example.ytclient.ui.pressScale
 
 /**
  * MeeTube-style feed card: a big rounded thumbnail with no card frame, then avatar, title, meta
  * line and a three-dot menu. Colors come from the Material You theme.
+ *
+ * Interactions: springy press-squish, long-press on the thumbnail (with haptic tick) opens the
+ * menu, and the menu offers go-to-channel, share and copy-link.
  */
 @Composable
 fun VideoCard(
@@ -59,9 +77,10 @@ fun VideoCard(
     val interaction = remember { MutableInteractionSource() }
     var menu by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
     // Decode at the size it is shown (not the full-size source): much smoother scrolling.
     val thumbRequest = remember(item.thumbnail) {
-        ImageRequest.Builder(context).data(item.thumbnail).size(640, 360).build()
+        ImageRequest.Builder(context).data(item.thumbnail).size(640, 360).crossfade(250).build()
     }
     val views = formatViews(item.views) ?: item.viewsText
     val meta = remember(item.channel, views, item.uploaded) {
@@ -79,13 +98,33 @@ fun VideoCard(
                 .aspectRatio(16f / 9f)
                 .clip(RoundedCornerShape(20.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+                .combinedClickable(
+                    interactionSource = interaction,
+                    indication = null,
+                    onLongClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        menu = true
+                    },
+                    onClick = onClick
+                )
         ) {
             AsyncImage(
                 model = thumbRequest,
                 contentDescription = item.title,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
+            )
+            // Soft scrim so the duration / LIVE badge stays readable on bright thumbnails.
+            Box(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color.Transparent, Color.Black.copy(alpha = 0.35f))
+                        )
+                    )
             )
             DurationBadge(item, Modifier.align(Alignment.BottomEnd))
         }
@@ -131,15 +170,46 @@ fun VideoCard(
                 if (menu) DropdownMenu(expanded = true, onDismissRequest = { menu = false }) {
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.open_channel)) },
+                        leadingIcon = { Icon(Icons.Filled.AccountCircle, contentDescription = null) },
                         onClick = {
                             menu = false
                             onChannelClick(item.channel)
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.share)) },
+                        leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
+                        onClick = {
+                            menu = false
+                            shareVideo(context, item)
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.copy_link)) },
+                        leadingIcon = { Icon(Icons.Filled.Link, contentDescription = null) },
+                        onClick = {
+                            menu = false
+                            copyLink(context, item)
                         }
                     )
                 }
             }
         }
     }
+}
+
+private fun shareVideo(context: Context, item: VideoItem) {
+    val send = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_TEXT, "${item.title}\n${item.url}")
+    }
+    context.startActivity(Intent.createChooser(send, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+}
+
+private fun copyLink(context: Context, item: VideoItem) {
+    val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    cm.setPrimaryClip(ClipData.newPlainText("url", "${item.url}"))
+    Toast.makeText(context, context.getString(R.string.link_copied), Toast.LENGTH_SHORT).show()
 }
 
 /** Compact row for "Up next": thumbnail on the left, title and meta on the right. */
@@ -199,15 +269,18 @@ fun VideoRow(item: VideoItem, onClick: () -> Unit, modifier: Modifier = Modifier
 @Composable
 private fun DurationBadge(item: VideoItem, modifier: Modifier) {
     if (item.isLive) {
-        Box(
+        Row(
             modifier
                 .padding(8.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .background(Color(0xFFFF0000))
+                .padding(horizontal = 7.dp, vertical = 3.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            LiveDot()
+            Spacer(Modifier.width(5.dp))
             Text(
                 stringResource(R.string.live),
-                modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
                 color = Color.White,
                 style = MaterialTheme.typography.labelSmall
             )
