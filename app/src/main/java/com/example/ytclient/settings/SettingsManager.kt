@@ -44,7 +44,9 @@ data class AppSettings(
     val language: AppLanguage = AppLanguage.SYSTEM,
     val resolution: Resolution = Resolution.AUTO,
     val blurStrength: Int = 20,
-    val blurEnabled: Boolean = true
+    val blurEnabled: Boolean = true,
+    val liquidGlass: Boolean = false,
+    val liveBlur: Boolean = true
 ) {
     companion object {
         const val DEFAULT_SEED: Int = 0xFFD93025.toInt() // YouTube red
@@ -61,6 +63,8 @@ object SettingsManager {
     private val KEY_RESOLUTION = stringPreferencesKey("resolution")
     private val KEY_BLUR = intPreferencesKey("blur_strength")
     private val KEY_BLUR_ENABLED = booleanPreferencesKey("blur_enabled")
+    private val KEY_LIQUID_GLASS = booleanPreferencesKey("liquid_glass")
+    private val KEY_LIVE_BLUR = booleanPreferencesKey("live_blur")
 
     private lateinit var store: DataStore<Preferences>
 
@@ -82,7 +86,9 @@ object SettingsManager {
                     runCatching { Resolution.valueOf(it) }.getOrNull()
                 } ?: Resolution.AUTO,
                 blurStrength = p[KEY_BLUR] ?: 20,
-                blurEnabled = p[KEY_BLUR_ENABLED] ?: true
+                blurEnabled = p[KEY_BLUR_ENABLED] ?: true,
+                liquidGlass = p[KEY_LIQUID_GLASS] ?: false,
+                liveBlur = p[KEY_LIVE_BLUR] ?: true
             )
         }
     }
@@ -113,5 +119,13 @@ object SettingsManager {
 
     suspend fun setBlurEnabled(enabled: Boolean) {
         store.edit { it[KEY_BLUR_ENABLED] = enabled }
+    }
+
+    suspend fun setLiquidGlass(enabled: Boolean) {
+        store.edit { it[KEY_LIQUID_GLASS] = enabled }
+    }
+
+    suspend fun setLiveBlur(enabled: Boolean) {
+        store.edit { it[KEY_LIVE_BLUR] = enabled }
     }
 }

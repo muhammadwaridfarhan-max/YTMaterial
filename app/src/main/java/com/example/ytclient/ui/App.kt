@@ -122,6 +122,10 @@ fun App(vm: MainViewModel = viewModel()) {
     val settings by com.example.ytclient.settings.SettingsManager.settings.collectAsState(initial = com.example.ytclient.settings.AppSettings())
     val blurStrength = settings.blurStrength
     val blurEnabled = settings.blurEnabled
+    val backdrop = rememberGlassBackdrop()
+    val glassStyle = remember(settings.liquidGlass, settings.liveBlur, backdrop) {
+        GlassStyle(liquid = settings.liquidGlass, live = settings.liveBlur, backdrop = backdrop)
+    }
 
     BackHandler(enabled = pagerState.currentPage != 0) {
         scope.launch { pagerState.animateScrollToPage(0) }
@@ -161,6 +165,12 @@ fun App(vm: MainViewModel = viewModel()) {
         }
     }
     val account by com.example.ytclient.auth.AccountManager.user.collectAsState(initial = null)
+    // Shorts must stay silent whenever something else covers it: another tab, search, a channel
+    // page or the full player (before, it kept playing under all of those).
+    val overlayOpen = showSearch || showChannel || (controller.current != null && controller.expanded)
+    androidx.compose.runtime.LaunchedEffect(overlayOpen, pagerState.currentPage) {
+        shorts.blocked = overlayOpen || pagerState.currentPage != 1
+    }
     // Warm the Shorts feed in the background; the page itself is only composed when you open it.
     androidx.compose.runtime.LaunchedEffect(Unit) {
         kotlinx.coroutines.delay(1200)
@@ -170,7 +180,8 @@ fun App(vm: MainViewModel = viewModel()) {
     Box(Modifier.fillMaxSize()) {
         CompositionLocalProvider(
             LocalFloatingInsets provides insets,
-            LocalScrollActivity provides scrollActivity
+            LocalScrollActivity provides scrollActivity,
+            LocalGlassStyle provides glassStyle
         ) {
             Box(
                 Modifier
@@ -183,6 +194,7 @@ fun App(vm: MainViewModel = viewModel()) {
                         .fillMaxSize()
                         .nestedScroll(hideConnection)
                         .hazeSource(hazeState)
+                        .glassBackdropSource(backdrop, glassStyle.liquid)
                 ) {
                     HorizontalPager(
                         state = pagerState,

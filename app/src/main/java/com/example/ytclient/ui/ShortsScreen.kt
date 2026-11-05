@@ -424,7 +424,7 @@ private fun ShortPage(
                     onClick = {
                         val send = Intent(Intent.ACTION_SEND).apply {
                             type = "text/plain"
-                            putExtra(Intent.EXTRA_TEXT, "${item.title}\\n${item.url}")
+                            putExtra(Intent.EXTRA_TEXT, "${item.title}\n${item.url}")
                         }
                         context.startActivity(Intent.createChooser(send, null))
                     }

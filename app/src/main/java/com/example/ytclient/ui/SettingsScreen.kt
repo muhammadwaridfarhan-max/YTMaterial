@@ -40,6 +40,7 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -207,6 +208,22 @@ fun YouScreen(vm: MainViewModel? = null, onSignIn: () -> Unit = {}) {
                 title = stringResource(R.string.blur_toggle),
                 value = checkedLabel
             ) { dialog = SettingsDialog.BLUR_ENABLED }
+        }
+        item {
+            SwitchItem(
+                icon = Icons.Filled.Palette,
+                title = stringResource(R.string.liquid_glass),
+                subtitle = stringResource(R.string.liquid_glass_hint),
+                checked = settings.liquidGlass
+            ) { scope.launch { SettingsManager.setLiquidGlass(it) } }
+        }
+        item {
+            SwitchItem(
+                icon = Icons.Filled.DarkMode,
+                title = stringResource(R.string.live_blur),
+                subtitle = stringResource(R.string.live_blur_hint),
+                checked = settings.liveBlur
+            ) { scope.launch { SettingsManager.setLiveBlur(it) } }
         }
     }
 
@@ -614,4 +631,38 @@ private fun BlurDialog(
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         }
     )
+}
+
+@Composable
+private fun SwitchItem(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onChange: (Boolean) -> Unit
+) {
+    Surface(
+        onClick = { onChange(!checked) },
+        shape = MaterialTheme.shapes.large,
+        color = Color.Transparent,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.size(16.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(Modifier.size(8.dp))
+            Switch(checked = checked, onCheckedChange = onChange)
+        }
+    }
 }

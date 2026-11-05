@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="liquid_glass">Liquid glass</string>
+    <string name="liquid_glass_hint">Bilah membiaskan latar di belakangnya seperti MeeTube (lensa penuh di Android 13+)</string>
+    <string name="live_blur">Blur langsung</string>
+    <string name="live_blur_hint">Bilah tetap blur saat scroll (lebih berat di GPU)</string>
+</resources>

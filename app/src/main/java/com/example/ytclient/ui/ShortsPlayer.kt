@@ -43,6 +43,23 @@ class ShortsPlayer(context: Context) {
     private var prefetchJob: Job? = null
     private val cache = LinkedHashMap<String, VideoStreams>()
 
+    /** Set by pause(), cleared by resume()/play(): Shorts is off screen or the app is in the background. */
+    private var suspended = false
+
+    /** Set by the host while another screen (other tab, search, channel, full player) covers Shorts. */
+    var blocked: Boolean = false
+        set(value) {
+            if (field == value) return
+            field = value
+            if (value) {
+                player.pause()
+            } else if (!suspended && !userPaused && currentUrl != null) {
+                player.play()
+            }
+        }
+
+    private fun mayPlay() = !suspended && !blocked
+
     var currentUrl by mutableStateOf<String?>(null)
         private set
     var hasFirstFrame by mutableStateOf(false)
@@ -92,6 +109,7 @@ class ShortsPlayer(context: Context) {
             resume()
             return
         }
+        suspended = false
         currentUrl = item.url
         hasFirstFrame = false
         error = null
@@ -106,7 +124,7 @@ class ShortsPlayer(context: Context) {
                 if (currentUrl != item.url) return@launch
                 player.setMediaSource(buildSource(streams))
                 player.prepare()
-                player.playWhenReady = true
+                player.playWhenReady = mayPlay()
             } catch (e: CancellationException) {
                 throw e
             } catch (t: Throwable) {
@@ -147,10 +165,14 @@ class ShortsPlayer(context: Context) {
         }
     }
 
-    fun pause() = player.pause()
+    fun pause() {
+        suspended = true
+        player.pause()
+    }
 
     fun resume() {
-        if (!userPaused && currentUrl != null) player.play()
+        suspended = false
+        if (!userPaused && !blocked && currentUrl != null) player.play()
     }
 
     fun release() {

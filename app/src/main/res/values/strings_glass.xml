@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="liquid_glass">Liquid glass</string>
+    <string name="liquid_glass_hint">Bars bend what is behind them, like MeeTube (full lens on Android 13+)</string>
+    <string name="live_blur">Live blur</string>
+    <string name="live_blur_hint">Keep bars blurred while scrolling (uses more GPU)</string>
+</resources>
